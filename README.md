@@ -48,10 +48,11 @@ dependencyResolutionManagement {
 ```kotlin
 // 模块的 build.gradle.kts
 dependencies {
-    implementation("com.github.learn-s-wood:focusindicator:1.0.0")
+    implementation("com.github.learn-s-wood:FocusIndicator:1.0.0")
 }
 ```
 
+> 坐标由 JitPack 按 **GitHub 用户名 + 仓库名 + tag** 生成，仓库名**区分大小写**（是 `FocusIndicator` 而非 `focusindicator`）。
 > 版本号需要与 GitHub 上的 **tag 完全一致**（当前为 `1.0.0`，不带 `v` 前缀）。
 > 首次拉取时 JitPack 需要现场构建，可能要等几分钟。
 
@@ -187,4 +188,4 @@ container.front().stroke(Color.WHITE, px(3)).corner(px(12)).padding(px(6));
 
 ## License
 
-Apache License 2.0
+[Apache License 2.0](LICENSE)
