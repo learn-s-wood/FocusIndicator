@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Demo 页面底色：深色，便于观察焦点飞框 -->
+    <color name="demo_background">#FF101010</color>
+    <color name="demo_accent">#FFFF5000</color>
+    <color name="demo_text_primary">#FFFFFFFF</color>
+    <color name="demo_text_secondary">#99FFFFFF</color>
+    <color name="demo_grid_card">#FF1F1F1F</color>
+</resources>

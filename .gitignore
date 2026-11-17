@@ -1,0 +1,25 @@
+# ---- 构建产物 ----
+build/
+.gradle/
+.kotlin/
+captures/
+
+# ---- 本机配置：含本机 SDK 路径，绝不能提交 ----
+local.properties
+
+# ---- 签名文件：绝不能让私钥进仓库 ----
+*.jks
+*.keystore
+
+# ---- IDE 工程文件：每个人 / 每台机器都不同，不入库 ----
+.idea/
+*.iml
+out/
+
+# ---- NDK ----
+.externalNativeBuild/
+.cxx/
+
+# ---- 系统文件 ----
+.DS_Store
+Thumbs.db

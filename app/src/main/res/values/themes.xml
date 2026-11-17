@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- API 17 上没有 Material，用 Holo 兜底；v21 覆盖为 Material -->
+    <style name="Theme.FocusIndicatorDemo" parent="@android:style/Theme.Holo.NoActionBar">
+        <item name="android:windowBackground">@color/demo_background</item>
+    </style>
+
+</resources>

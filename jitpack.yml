@@ -1,0 +1,8 @@
+jdk:
+  - openjdk17
+
+# Windows 上提交的 gradlew 在 git 里没有可执行位（记为 100644），
+# JitPack 的 Linux 构建机执行 ./gradlew 时会 Permission denied。
+# 在这里补一次 chmod，就不必在本地用 git update-index --chmod=+x 单独处理。
+before_install:
+  - chmod +x ./gradlew

@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">FocusIndicator</string>
+
+    <string name="demo_title">FocusIndicator</string>
+    <string name="demo_tip">方向键切换焦点 · 上下移动时飞框会跨行飞过去 · 返回键退出</string>
+
+    <string name="demo_label_tabs">1. 圆角实心底色：同尺寸 item，色块在 item 下层平移</string>
+    <string name="demo_label_cards">2. 描边飞框 + 变形：不同尺寸 item 之间移动，宽高与圆角逐帧重绘</string>
+    <string name="demo_label_combo">3. 底色 + 描边组合：两层各自动画，同步变形</string>
+    <string name="demo_label_scale">4. 焦点放大 + 飞框贴合：item 放大 1.2 倍，框应始终贴住放大后的边缘</string>
+    <string name="demo_label_grid">5. 列表/网格：RecyclerView 中的 item，滚动后焦点依然被正确跟踪</string>
+
+    <string name="tab_recommend">推荐</string>
+    <string name="tab_animation">动画</string>
+    <string name="tab_song">儿歌</string>
+    <string name="tab_english">英语</string>
+
+    <string name="card_small">小</string>
+    <string name="card_medium">中</string>
+    <string name="card_large">大卡片</string>
+    <string name="card_wide">宽条</string>
+    <string name="card_tall">竖条</string>
+
+    <string name="combo_one">套餐一</string>
+    <string name="combo_two">套餐二（长一些）</string>
+    <string name="combo_three">套餐三</string>
+
+    <string name="scale_one">放大一</string>
+    <string name="scale_two">放大二</string>
+    <string name="scale_three">放大三</string>
+    <string name="scale_four">四</string>
+    <string name="scale_five">放大五</string>
+</resources>
