@@ -6,6 +6,7 @@ package io.github.learnswood.focusindicator.demo
 
 import android.app.Activity
 import android.graphics.Color
+import android.graphics.drawable.TransitionDrawable
 import android.os.Bundle
 import android.view.View
 import android.view.animation.DecelerateInterpolator
@@ -20,7 +21,7 @@ import io.github.learnswood.focusindicator.FocusIndicatorLayout
  * 2. 不同尺寸 item + 描边飞框，验证宽高/圆角逐帧重绘的变形动画
  * 3. 底色层 + 描边层组合，两层同形不同 padding，验证同步变形
  * 4. item 焦点态放大 1.2 倍，验证飞框能否始终贴住放大后的实际外形
- * 5. RecyclerView 网格，验证列表场景下指示器与复用 item 的配合
+ * 5. RecyclerView 网格，验证列表场景下指示器与复用 item 的配合（圆角不设置，自动跟随卡片背景）
  */
 class MainActivity : Activity() {
 
@@ -58,6 +59,18 @@ class MainActivity : Activity() {
             .padding(0f)
         // 顶层没有配置任何样式，保持关闭状态：纯色块效果
         container.front().enable(false)
+
+        // 豁免项的焦点态由 item 自己画，这里给它也加上过渡：飞框淡出的同一段时间里
+        // 色块渐亮，两边的节奏才连得上。不用 selector 的原因见 bg_tab_own_focus.xml
+        val tab4 = findViewById<View>(R.id.tab4)
+        tab4.setOnFocusChangeListener { view, hasFocus ->
+            val background = view.background as? TransitionDrawable ?: return@setOnFocusChangeListener
+            if (hasFocus) {
+                background.startTransition(FOCUS_TRANSITION_DURATION)
+            } else {
+                background.reverseTransition(FOCUS_TRANSITION_DURATION)
+            }
+        }
     }
 
     /**
@@ -128,6 +141,8 @@ class MainActivity : Activity() {
      * 场景 5：RecyclerView 网格。
      * 网格 item 自带圆角背景，实心底色层会被背景盖住，因此只用顶层描边 + 外发光；
      * item 不需要任何焦点态 selector，容器会自动跟踪复用后的子 View。
+     * 这里故意不调 corner()：卡片背景是 10dp 圆角的 shape，指示器会自动读出来，
+     * 再叠上 2dp 外扩变成 12dp，正好是圆角矩形平移后的几何圆角。
      */
     private fun setupGridDemo() {
         val container = findViewById<FocusIndicatorLayout>(R.id.fiGrid)
@@ -135,7 +150,6 @@ class MainActivity : Activity() {
         container.front()
             .stroke(COLOR_ACCENT, dp(3))
             .glow(Color.argb(0x66, 0xFF, 0x50, 0x00), dp(4))
-            .corner(dp(10))
             .padding(dp(2))
 
         val grid = findViewById<RecyclerView>(R.id.gridList)
@@ -154,9 +168,15 @@ class MainActivity : Activity() {
 
         /**
          * 场景 4：放大动画时长。
-         * 故意比飞框默认的 220ms 长，用来暴露「框跟不上 item」的时序问题。
+         * 故意比飞框默认的 220ms 长，用来暴露框跟不上 item 的时序问题。
          */
         const val SCALE_DURATION = 300L
+
+        /**
+         * 场景 1：英语 tab 自带焦点态的淡入淡出时长。
+         * 和飞框淡出的 140ms 取同一量级，两段过渡才能接上。
+         */
+        const val FOCUS_TRANSITION_DURATION = 120
 
         /** 场景 5：网格列数与 item 数量（两行） */
         const val GRID_SPAN_COUNT = 4

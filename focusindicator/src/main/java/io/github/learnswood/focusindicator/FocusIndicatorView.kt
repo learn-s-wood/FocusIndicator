@@ -17,14 +17,9 @@ import kotlin.math.floor
 import kotlin.math.max
 
 /**
- * 单层焦点指示器：只负责把一个圆角矩形画出来，不参与焦点与布局。
- *
- * 支持三种视觉叠加，可任意组合：圆角实心底色、描边、外发光。
- * 变形动画通过 [update] 逐帧传入真实外形，宽高变化是真实重绘，
- * 不是 scale 缩放 —— 因此圆角不会椭圆化、描边粗细不会随拉伸比例变化。
- *
- * 每帧只标脏"上一帧 ∪ 当前帧"的外接矩形，低端设备上重绘面积可以压到全屏的几十分之一，
- * 这是 API 17 老盒子也能跑满帧的关键。
+ * 单层焦点指示器：只画一个圆角矩形，不参与焦点与布局。
+ * 底色、描边、外发光可任意组合；外形由 [update] 逐帧传入，宽高是真实重绘而不是 scale 拉伸。
+ * 脏区策略见 docs/design.md
  */
 class FocusIndicatorView @JvmOverloads constructor(
     context: Context,
@@ -53,10 +48,18 @@ class FocusIndicatorView @JvmOverloads constructor(
     private var strokeWidth = 0f
     private var glowWidth = 0f
 
-    /** 光晕原色与其两层 alpha，缓存下来避免每帧在 paint 上反复读写导致 alpha 逐渐衰减 */
-    private var glowColorValue = Color.TRANSPARENT
-    private var glowAlphaInner = 0
-    private var glowAlphaOuter = 0
+    /** 光晕的基准 alpha、环数，以及由它们算出的总厚度 / 单环厚度（setStyle 时定好） */
+    private var glowBaseAlpha = 0
+    private var glowLayers = 1
+    private var glowTotal = 0f
+    private var glowBand = 0f
+
+    /** 填充/描边的原始 alpha，onDraw 时与 [contentAlpha] 相乘，用于淡入淡出 */
+    private var fillBaseAlpha = 0
+    private var strokeBaseAlpha = 0
+
+    /** 内容整体透明度（0~1），由容器在显示/隐藏时驱动 */
+    private var contentAlpha = 1f
 
     init {
         // 纯绘制层：不抢焦点、不响应点击、不参与无障碍导航
@@ -64,11 +67,19 @@ class FocusIndicatorView @JvmOverloads constructor(
         isClickable = false
         importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_NO
         strokePaint.style = Paint.Style.STROKE
+        // 光晕同样只描边；环与环之间要圆角相接，否则每环的接缝处会露出尖角
+        glowPaint.style = Paint.Style.STROKE
+        glowPaint.strokeJoin = Paint.Join.ROUND
+        glowPaint.isDither = true
     }
 
     /**
      * 更新绘制样式。仅在配置变化时调用，动画过程中不调用。
+     *
+     * `glowLayers` 带默认值：1.0.0 里按 8 个参数调用本方法的代码不会断（Java 侧靠
+     * [JvmOverloads] 生成 8 参重载）。
      */
+    @JvmOverloads
     fun setStyle(
         hasFill: Boolean,
         fillColor: Int,
@@ -77,21 +88,28 @@ class FocusIndicatorView @JvmOverloads constructor(
         strokeWidthPx: Float,
         hasGlow: Boolean,
         glowColor: Int,
-        glowWidthPx: Float
+        glowWidthPx: Float,
+        glowLayers: Int = FocusIndicatorLayout.DEFAULT_GLOW_LAYERS
     ) {
         drawFill = hasFill
         drawStroke = hasStroke
         strokeWidth = strokeWidthPx
         drawGlow = hasGlow
         glowWidth = glowWidthPx
-        glowColorValue = glowColor
-        glowAlphaInner = Color.alpha(glowColor)
-        glowAlphaOuter = glowAlphaInner / 2
+        glowBaseAlpha = Color.alpha(glowColor)
+        this.glowLayers = glowLayers.coerceAtLeast(1)
+        // 总厚度沿用 2×width：width 参数的语义保持不变；环宽只在这里算一次
+        glowTotal = glowWidthPx * 2f
+        glowBand = glowTotal / this.glowLayers
+
+        fillBaseAlpha = Color.alpha(fillColor)
+        strokeBaseAlpha = Color.alpha(strokeColor)
 
         fillPaint.color = fillColor
         strokePaint.color = strokeColor
         strokePaint.strokeWidth = strokeWidthPx
         glowPaint.color = glowColor
+        glowPaint.strokeWidth = glowBand
 
         invalidate()
     }
@@ -121,8 +139,39 @@ class FocusIndicatorView @JvmOverloads constructor(
         if (rect.isEmpty) {
             return
         }
+        invalidateRect()
         rect.setEmpty()
-        invalidate()
+    }
+
+    /**
+     * 设置整体透明度（0~1），用于淡入淡出。
+     *
+     * 用 Paint 的 alpha 而不是 View.alpha：后者会让铺满容器的整个浮层全量重绘，
+     * 而这里只把当前外形那一小块脏区标脏，API 19 的机器上开销差一个数量级。
+     */
+    fun setContentAlpha(alpha: Float) {
+        val value = alpha.coerceIn(0f, 1f)
+        if (contentAlpha == value) {
+            return
+        }
+        contentAlpha = value
+        if (rect.isEmpty) {
+            invalidate()
+        } else {
+            invalidateRect()
+        }
+    }
+
+    /** 只标脏当前外形（含描边/光晕外扩）所在矩形 */
+    private fun invalidateRect() {
+        val pad = max(strokeWidth, glowWidth * 2f) + ANTI_ALIAS_PAD
+        dirty.set(
+            floor(rect.left - pad).toInt(),
+            floor(rect.top - pad).toInt(),
+            ceil(rect.right + pad).toInt(),
+            ceil(rect.bottom + pad).toInt()
+        )
+        invalidate(dirty.left, dirty.top, dirty.right, dirty.bottom)
     }
 
     /** 是否有可绘制内容 */
@@ -175,35 +224,36 @@ class FocusIndicatorView @JvmOverloads constructor(
         }
 
         if (drawGlow && glowWidth > 0) {
-            // 两层半透明外扩模拟发光：低端设备禁用 setShadowLayer(会退化为软件绘制)
-            glowPaint.color = glowColorValue
-
-            glowPaint.alpha = glowAlphaOuter
-            tmpRect.set(rect)
-            tmpRect.inset(-glowWidth * 2f, -glowWidth * 2f)
-            canvas.drawRoundRect(
-                tmpRect,
-                cornerRadius + glowWidth * 2f,
-                cornerRadius + glowWidth * 2f,
-                glowPaint
-            )
-
-            glowPaint.alpha = glowAlphaInner
-            tmpRect.set(rect)
-            tmpRect.inset(-glowWidth, -glowWidth)
-            canvas.drawRoundRect(
-                tmpRect,
-                cornerRadius + glowWidth,
-                cornerRadius + glowWidth,
-                glowPaint
-            )
+            // 同心环近似径向衰减：API 19 上用不了 setShadowLayer / BlurMaskFilter（会退化为软件绘制），
+            // 只能堆几何。环太少时每环都是常量 alpha，肉眼会看出“几层色带 + 硬边”，
+            // 所以把总厚度切成 glowLayers 段、alpha 随距离线性衰减到接近 0，段数越多越像渐变。
+            // 颜色/描边/环宽已在 setStyle 里定好，这里每帧只逐环改 alpha
+            val halfBand = glowBand / 2f
+            // 从外向内画：各环区间互不重叠，避免叠加把内侧那档抬亮
+            var i = glowLayers - 1
+            while (i >= 0) {
+                // 该环描边路径（环中心）到 item 边缘的距离
+                val center = i * glowBand + halfBand
+                glowPaint.alpha = (glowBaseAlpha * (1f - center / glowTotal) * contentAlpha).toInt()
+                tmpRect.set(rect)
+                tmpRect.inset(-center, -center)
+                canvas.drawRoundRect(
+                    tmpRect,
+                    cornerRadius + center,
+                    cornerRadius + center,
+                    glowPaint
+                )
+                i--
+            }
         }
 
         if (drawFill) {
+            fillPaint.alpha = (fillBaseAlpha * contentAlpha).toInt()
             canvas.drawRoundRect(rect, cornerRadius, cornerRadius, fillPaint)
         }
 
         if (drawStroke && strokeWidth > 0) {
+            strokePaint.alpha = (strokeBaseAlpha * contentAlpha).toInt()
             // 描边向内收缩半个线宽，避免一半线宽画到矩形外面被裁掉
             val half = strokeWidth / 2f
             tmpRect.set(rect)

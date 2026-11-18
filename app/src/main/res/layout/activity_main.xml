@@ -12,7 +12,6 @@
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/demo_background"
     android:clipChildren="false"
     android:clipToPadding="false"
     android:fillViewport="true"
@@ -64,6 +63,7 @@
 
                 <TextView
                     android:id="@+id/tab1"
+                    android:background="@drawable/bg_item_bounds"
                     android:layout_width="80dp"
                     android:layout_height="36dp"
                     android:focusable="true"
@@ -74,6 +74,7 @@
 
                 <TextView
                     android:id="@+id/tab2"
+                    android:background="@drawable/bg_item_bounds"
                     android:layout_width="80dp"
                     android:layout_height="36dp"
                     android:layout_marginStart="8dp"
@@ -85,6 +86,7 @@
 
                 <TextView
                     android:id="@+id/tab3"
+                    android:background="@drawable/bg_item_bounds"
                     android:layout_width="80dp"
                     android:layout_height="36dp"
                     android:layout_marginStart="8dp"
@@ -94,13 +96,16 @@
                     android:textColor="@color/demo_text_primary"
                     android:textSize="13sp" />
 
+                <!-- 这个 tab 自带焦点样式，用 tag 退出父容器的统一底色块 -->
                 <TextView
                     android:id="@+id/tab4"
                     android:layout_width="80dp"
                     android:layout_height="36dp"
                     android:layout_marginStart="8dp"
+                    android:background="@drawable/bg_tab_own_focus"
                     android:focusable="true"
                     android:gravity="center"
+                    android:tag="fi:ignore"
                     android:text="@string/tab_english"
                     android:textColor="@color/demo_text_primary"
                     android:textSize="13sp" />
@@ -134,6 +139,7 @@
 
                 <TextView
                     android:id="@+id/card1"
+                    android:background="@drawable/bg_item_bounds"
                     android:layout_width="64dp"
                     android:layout_height="36dp"
                     android:focusable="true"
@@ -144,6 +150,7 @@
 
                 <TextView
                     android:id="@+id/card2"
+                    android:background="@drawable/bg_item_bounds"
                     android:layout_width="118dp"
                     android:layout_height="36dp"
                     android:layout_marginStart="10dp"
@@ -155,6 +162,7 @@
 
                 <TextView
                     android:id="@+id/card3"
+                    android:background="@drawable/bg_item_bounds"
                     android:layout_width="132dp"
                     android:layout_height="68dp"
                     android:layout_marginStart="10dp"
@@ -166,6 +174,7 @@
 
                 <TextView
                     android:id="@+id/card4"
+                    android:background="@drawable/bg_item_bounds"
                     android:layout_width="190dp"
                     android:layout_height="36dp"
                     android:layout_marginStart="10dp"
@@ -177,6 +186,7 @@
 
                 <TextView
                     android:id="@+id/card5"
+                    android:background="@drawable/bg_item_bounds"
                     android:layout_width="82dp"
                     android:layout_height="68dp"
                     android:layout_marginStart="10dp"
@@ -215,6 +225,7 @@
 
                 <TextView
                     android:id="@+id/combo1"
+                    android:background="@drawable/bg_item_bounds"
                     android:layout_width="110dp"
                     android:layout_height="36dp"
                     android:focusable="true"
@@ -225,6 +236,7 @@
 
                 <TextView
                     android:id="@+id/combo2"
+                    android:background="@drawable/bg_item_bounds"
                     android:layout_width="180dp"
                     android:layout_height="36dp"
                     android:layout_marginStart="10dp"
@@ -236,6 +248,7 @@
 
                 <TextView
                     android:id="@+id/combo3"
+                    android:background="@drawable/bg_item_bounds"
                     android:layout_width="110dp"
                     android:layout_height="36dp"
                     android:layout_marginStart="10dp"
@@ -274,6 +287,7 @@
 
                 <TextView
                     android:id="@+id/scale1"
+                    android:background="@drawable/bg_item_bounds"
                     android:layout_width="70dp"
                     android:layout_height="34dp"
                     android:focusable="true"
@@ -284,6 +298,7 @@
 
                 <TextView
                     android:id="@+id/scale2"
+                    android:background="@drawable/bg_item_bounds"
                     android:layout_width="92dp"
                     android:layout_height="34dp"
                     android:layout_marginStart="18dp"
@@ -295,6 +310,7 @@
 
                 <TextView
                     android:id="@+id/scale3"
+                    android:background="@drawable/bg_item_bounds"
                     android:layout_width="106dp"
                     android:layout_height="34dp"
                     android:layout_marginStart="18dp"
@@ -306,6 +322,7 @@
 
                 <TextView
                     android:id="@+id/scale4"
+                    android:background="@drawable/bg_item_bounds"
                     android:layout_width="56dp"
                     android:layout_height="34dp"
                     android:layout_marginStart="18dp"
@@ -317,6 +334,7 @@
 
                 <TextView
                     android:id="@+id/scale5"
+                    android:background="@drawable/bg_item_bounds"
                     android:layout_width="106dp"
                     android:layout_height="34dp"
                     android:layout_marginStart="18dp"

@@ -3,13 +3,13 @@
     <string name="app_name">FocusIndicator</string>
 
     <string name="demo_title">FocusIndicator</string>
-    <string name="demo_tip">方向键切换焦点 · 上下移动时飞框会跨行飞过去 · 返回键退出</string>
+    <string name="demo_tip">方向键切换焦点 · 上下移动时飞框会跨行飞过去 · 返回键退出 · 每个 item 的细线框就是它自身占据的范围</string>
 
-    <string name="demo_label_tabs">1. 圆角实心底色：同尺寸 item，色块在 item 下层平移</string>
-    <string name="demo_label_cards">2. 描边飞框 + 变形：不同尺寸 item 之间移动，宽高与圆角逐帧重绘</string>
-    <string name="demo_label_combo">3. 底色 + 描边组合：两层各自动画，同步变形</string>
+    <string name="demo_label_tabs">1. 圆角实心底色：同尺寸 item，色块在 item 下层平移（最后一个 tab 带 tag="fi:ignore"，自带焦点样式并自己淡入淡出，色块会边滑过去边淡出）</string>
+    <string name="demo_label_cards">2. 描边飞框 + 变形：不同尺寸 item 之间移动，宽高与圆角逐帧重绘（白框外扩 6dp，与 item 细线之间留 3dp 空隙）</string>
+    <string name="demo_label_combo">3. 底色 + 描边组合：底色贴住 item、描边外扩 8dp，两层各自动画、同步变形</string>
     <string name="demo_label_scale">4. 焦点放大 + 飞框贴合：item 放大 1.2 倍，框应始终贴住放大后的边缘</string>
-    <string name="demo_label_grid">5. 列表/网格：RecyclerView 中的 item，滚动后焦点依然被正确跟踪</string>
+    <string name="demo_label_grid">5. 列表/网格：RecyclerView 中的 item，滚动后焦点依然被正确跟踪（未设圆角，自动跟随卡片背景）</string>
 
     <string name="tab_recommend">推荐</string>
     <string name="tab_animation">动画</string>

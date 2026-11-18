@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    场景 1 里英语 tab 自带的焦点样式。
+
+    它同时带上了 android:tag="fi:ignore"，父容器的统一底色块不再跟随它，
+    所以这里必须自己把焦点态画出来，否则聚焦时什么都看不到。
+
+    用 <transition> 而不是 <selector>：焦点态由代码驱动淡入淡出（见 MainActivity 的
+    setupColorBlockDemo），两层的时长和飞框的淡出对齐。selector 的焦点态是瞬时的 ——
+    飞框还在淡出的同时色块就全亮了，那一小段会看出来是啪一下。
+-->
+<transition xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@drawable/bg_tab_own_focus_idle" />
+    <item android:drawable="@drawable/bg_tab_own_focus_active" />
+</transition>

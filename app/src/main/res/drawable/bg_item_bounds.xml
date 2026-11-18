@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    item 自身范围的参考线。
+    Demo 的 item 都是无背景的 TextView，不画这圈线就看不出 item 的真实边界，
+    也就无法判断飞框与 item 之间到底留了多少空隙。只描边、不填充，
+    不会盖住 behind 层画的底色块。
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="@android:color/transparent" />
+    <stroke
+        android:width="1dp"
+        android:color="#40FFFFFF" />
+</shape>
