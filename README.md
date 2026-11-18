@@ -7,22 +7,18 @@ Android TV / 机顶盒的焦点飞框库。焦点指示器从 item 里剥出来�
 
 ## 特性
 
-- 只用 Framework API。`minSdk 17`，除 Kotlin 标准库外零依赖，不引入 AndroidX，可与 support library / AndroidX / Compose 项目共存。
-- API 17 的盒子也能跑。动画期间每帧只重绘“上一帧 ∪ 当前帧”的脏区，重绘面积通常只有全屏的几十分之一。
-- 真实变形。宽高与圆角逐帧重绘，不是 `scale` 拉伸，圆角不会椭圆化，描边粗细也不随比例变化。
-- 三种视觉可自由组合。圆角实心底色、描边、外发光，两层独立配置、同步动画。
-- 跟随放大动画。item 在焦点态自己做 `animate().scaleX(1.2f)` 时，飞框逐帧重采真实外形，始终贴住放大后的边缘。
+- 零依赖。`minSdk 17`，只用 Framework API，除 Kotlin 标准库外不引入任何库，可与 support library / AndroidX / Compose 项目共存。
+- 老设备不掉帧。动画期间只重绘变化的脏区，API 17 的盒子也能跑。
+- 真实变形。宽高与圆角逐帧重绘，不是 `scale` 拉伸：圆角不椭圆化、描边不随比例变粗；item 自己做放大动画时框也贴得住。
+- 三种视觉可组合。圆角实心底色、描边、外发光，两层独立配置、同步动画；显示与隐藏走淡入淡出（默认 180 / 140ms）。
 - 跨容器接力。同页多个容器绑同一个 `Group`，上下换行时飞框从上一行飞过来。
-- 可局部豁免。item 自带专属焦点样式时，给它加 `android:tag="fi:ignore"` 或调 `ignoreFocus(view)`，父容器的飞框对它淡出收场。
-- 淡入淡出。飞框与底色的显示/隐藏走 alpha 过渡（默认淡入 180ms、淡出 140ms），底色退场与白框入场同时发生，跨容器不硬闪。
-- 圆角自动跟随。不配 `corner()` 时读 item 自身的圆角（背景 shape / Outline），不同卡片不同圆角不用逐个配。
-- 业务零侵入。item 只需 `focusable="true"`，不需要焦点态 selector、不需要背景、不需要任何回调。
+- 业务零侵入。item 只需 `focusable="true"`。自带焦点样式的 item 可用 `tag="fi:ignore"` 豁免，不配 `corner()` 时圆角自动跟随 item。
 
 ## 效果预览
 
-真机录制（Android 4.4 平板，GIF 已按实际速度回放）：
+真机录制（Android 4.4 盒子）：
 
-1. 圆角实心底色平移 + 单个 item 豁免。最后一个 tab 带 `tag="fi:ignore"`、自带焦点样式（用 `TransitionDrawable` 自己淡入淡出），色块对它淡出；随后按下键切到示例 2，底色淡出、白框淡入
+1. 圆角实心底色平移 + 单个 item 豁免。最后一个 tab 自带焦点样式（`TransitionDrawable` 自己淡入淡出），色块对它淡出；换到示例 2 时底色淡出、白框淡入
 
 ![示例 1：底色平移与淡出淡入](docs/preview-01-fill.gif)
 
@@ -46,13 +42,9 @@ Android TV / 机顶盒的焦点飞框库。焦点指示器从 item 里剥出来�
 
 ```
 FocusIndicator/
-├── focusindicator/          # 功能库（发布产物）
-│   └── src/main/java/io/github/learnswood/focusindicator/
-│       ├── FocusIndicatorLayout.kt   # 焦点飞框容器（FrameLayout）
-│       └── FocusIndicatorView.kt     # 单层指示器绘制 View
-├── app/                     # 示例 Demo（五种典型用法）
-├── jitpack.yml              # JitPack 构建环境（JDK 17）
-└── docs/                    # preview.png / preview-0*.gif 截图与录制；design.md 写实现细节
+├── focusindicator/     # 功能库
+├── app/                # Demo，五个典型场景
+└── docs/               # 预览图与 GIF
 ```
 
 ## 接入
@@ -79,6 +71,28 @@ dependencies {
 }
 ```
 
+Groovy DSL 的写法：
+
+```groovy
+// settings.gradle
+dependencyResolutionManagement {
+    repositories {
+        google()
+        mavenCentral()
+        maven { url 'https://jitpack.io' }
+    }
+}
+```
+
+```groovy
+// 模块的 build.gradle
+dependencies {
+    implementation 'com.github.learn-s-wood:FocusIndicator:1.1.0'
+}
+```
+
+Gradle 6.7 及更早没有 `dependencyResolutionManagement`，把 `maven { url 'https://jitpack.io' }` 写进根 `build.gradle` 的 `allprojects { repositories { } }` 即可。
+
 坐标由 JitPack 按 GitHub 用户名 + 仓库名 + tag 生成，仓库名区分大小写（是 `FocusIndicator`，不是 `focusindicator`）。
 版本号要与 GitHub 上的 tag 完全一致，当前 `1.1.0`，不带 `v` 前缀，可用版本见 [CHANGELOG.md](CHANGELOG.md)。
 首次拉取时 JitPack 要现场构建，可能等几分钟。
@@ -90,6 +104,8 @@ dependencies {
     implementation(project(":focusindicator"))
 }
 ```
+
+Groovy DSL 写成 `implementation project(':focusindicator')` 即可。
 
 不需要额外配置：库除 Kotlin 标准库外没有任何依赖，`minSdk` 17 也不会抬高使用方的门槛。
 
@@ -123,7 +139,7 @@ dependencies {
 </io.github.learnswood.focusindicator.FocusIndicatorLayout>
 ```
 
-### 2. 配置视觉样式（Kotlin）
+### 2. 配置视觉样式
 
 ```kotlin
 val container = findViewById<FocusIndicatorLayout>(R.id.fiTabs)
@@ -141,30 +157,35 @@ container.front()
     .padding(dp(6))
 ```
 
-### 3. 多行 / 多栏共享一个接力组（可选）
+Java 写法一样：
+
+```java
+FocusIndicatorLayout container = (FocusIndicatorLayout) findViewById(R.id.fiTabs);
+container.behind().fill(0xFFFF5000).corner(px(22)).padding(0);
+container.front().stroke(Color.WHITE, px(3)).corner(px(12)).padding(px(6));
+```
+
+### 3. 多行 / 多栏共享接力组（可选）
 
 ```kotlin
 val group = FocusIndicatorLayout.Group()
 row1.setGroup(group)
 row2.setGroup(group)
-row3.setGroup(group)
 ```
 
-Java 用法完全一致：
-
 ```java
-FocusIndicatorLayout container = findViewById(R.id.fi_tabs);
-container.behind().fill(0xFFFF5000).corner(px(22)).padding(0);
-container.front().stroke(Color.WHITE, px(3)).corner(px(12)).padding(px(6));
+FocusIndicatorLayout.Group group = new FocusIndicatorLayout.Group();
+row1.setGroup(group);
+row2.setGroup(group);
 ```
 
 ### 4. 让某个 item 不显示统一飞框（可选）
 
-有些 item 自己就有一套焦点样式（描边动效、异形高亮、整卡换图），硬套统一飞框反而别扭。
-两种写法任选，带标记的 View 整棵子树都不再参与统一飞框：
+有些 item 自己就有焦点样式（描边动效、异形高亮、整卡换图），硬套统一飞框反而别扭。
+带标记的 View 整棵子树都不再参与统一飞框：
 
 ```xml
-<!-- 推荐：写在 item 布局里，RecyclerView 复用时自动生效，不用维护任何调用 -->
+<!-- 推荐：写在 item 布局里，RecyclerView 复用时自动生效，不用维护调用 -->
 <FrameLayout
     android:tag="fi:ignore"
     android:background="@drawable/bg_item_own_focus"
@@ -172,120 +193,77 @@ container.front().stroke(Color.WHITE, px(3)).corner(px(12)).padding(px(6));
 ```
 
 ```kotlin
-// 需要按数据动态决定时：内部是 WeakHashMap，列表回收不会泄漏
+// 需要按数据动态决定时的等价 API（弱引用，不阻止列表回收）
 container.ignoreFocus(holder.itemView)
-container.isFocusIgnored(holder.itemView)   // 查询是否被豁免
-container.unignoreFocus(holder.itemView)     // 取消豁免
+container.isFocusIgnored(holder.itemView)   // 查询
+container.unignoreFocus(holder.itemView)     // 取消
 ```
 
-豁免只说“容器别画”，焦点样式还得 item 自己出。容器不兜底。
+豁免只是让容器闭嘴，item 自己的焦点态还得自己出。飞框朝豁免项滑过去时会一路淡尽，
+所以从豁免项离开时不会从更早那个 item 的坐标起飞。
 
-同容器内焦点落到豁免项时，飞框会滑过去、路上淡完。这一步省不得：容器和接力组记的是
-“上次隐藏的位置”，直接隐藏会留下更早那个普通 item 的坐标。`大卡片 → 英语（豁免）→ 儿歌`
-这种走法，从英语离开时框就会从大卡片飞过来。
-
-跨容器没这一段。常规跨容器本来就靠接力组交接，豁免项又没有自己的框，出发容器原地退场、
-把接力点记成豁免项的位置就够了。
-
-淡出停在路程 2/3 附近（默认参数约 134ms），框在碰到豁免项之前就没了。这个点绑的是路程
-不是时间，`setDuration()` 调长也不会变成“贴到才消失”；`setFadeDuration()` 比它短时以它为准，
-传 0 就是瞬时。
-
-豁免项自己的焦点态最好也有过渡。selector 切换是瞬时的，这边淡了 130ms、那边啪一下全亮，
-差得出来。`TransitionDrawable` 最省事（API 1 起，Demo 里英语 tab 用的就是它，120ms），
-`AnimatedStateListDrawable` 要 API 21+，或者自己用 `ValueAnimator` 驱动 `Drawable.setAlpha()`。
-库不管这件事，它不知道你的焦点态是背景、描边还是自绘。
+豁免项的焦点态最好也有过渡（`TransitionDrawable` 或 `ValueAnimator`），否则这边淡了
+130ms、那边直接跳亮，对比很明显。
 
 ### 5. 淡入淡出（可选）
 
-默认走 alpha 过渡（淡入 180ms、淡出 140ms），一般不用动。开关不是布尔值而是时长，
-传 0 就是瞬时（等于 1.0.0 的硬切）。淡入淡出分开配：
+默认淡入 180ms、淡出 140ms，一般不用动。开关是时长而不是布尔值：传 `0` 即瞬时。
 
 | 需求 | 写法 | 效果 |
 | --- | --- | --- |
 | 用默认值 | 不调用 | 淡入 180ms / 淡出 140ms |
-| 改快慢 | `setFadeDuration(300, 200)` | 两者都保留，时长自定义 |
+| 改快慢 | `setFadeDuration(300, 200)` | 时长自定义 |
 | 只关淡出 | `setFadeDuration(180, 0)` | 显示有渐变、隐藏瞬时 |
 | 只关淡入 | `setFadeDuration(0, 140)` | 显示瞬时、隐藏有渐变 |
-| 整体关闭 | `setFadeDuration(0, 0)` | 完全不透明跳变，隐藏时立即清空绘制层 |
+| 整体关闭 | `setFadeDuration(0, 0)` | 跳变，隐藏时立即清空绘制层 |
+
+配置是实例级的，运行时随时改，不用重建容器：
 
 ```kotlin
-container.setFadeDuration(180, 140)   // 默认值
-container.setFadeDuration(180, 0)     // 只关淡出
-container.setFadeDuration(0, 0)       // 关闭淡入淡出，回到硬切
-```
-
-配置是实例级的，运行时随便改。`fadeIn()` / `fadeOut()` 每次触发都读当前值，不用重建容器，
-也不用重新走一遍 `behind()` / `front()`。按场景临时切就行：
-
-```kotlin
-override fun onPause() {
-    container.setFadeDuration(0, 0)   // 页面退出时省掉无意义的过渡
-    super.onPause()
-}
+// 确定要退出页面时：省掉无意义的淡出，也不和窗口退场动画叠影
+container.setFadeDuration(0, 0)
+finish()
 ```
 
 底色块和描边层各管各的。焦点从 A 容器移到 B 容器时，A 的底色淡出、B 的描边淡入，同时发生。
 
-不支持下面几种，需要时只能走代码：
-
-- XML 属性。库没有 `res/attrs.xml`，布局里写不了淡入淡出的属性。
-- 布尔开关。没有 `setFadeEnabled(false)`，用 `0` 表达。
-- 读当前值。默认时长是 `private const`，没有 `getFadeDuration()`。
-- 全局开关。配置在实例上，多个容器要逐个设。
+没有 XML 属性、布尔开关和 `getFadeDuration()`：配置只在代码里，关闭用 `0` 表达，多个容器要逐个设。
 
 ### 6. 框与 item 的间隔 / 圆角自动跟随（可选）
 
-两者都挂在 `Layer` 上，默认贴紧 item、跟随 item 圆角，不配也能用。
+两者都挂在 `Layer` 上，默认贴紧 item、跟随 item 圆角。
 
-间隔用 `padding()`，它是相对 item 的外扩距离，默认 `0`。
+`padding()` 是相对 item 的外扩距离，默认 `0`：
 
 ```kotlin
-container.behind().fill(accent).padding(0f)                    // 底色正好铺满 item
+container.behind().fill(accent).padding(0f)                    // 底色铺满 item
 container.front().stroke(Color.WHITE, dp(3)).padding(dp(10))   // 描边推到 item 外 10dp
 ```
 
-描边画在外扩后的矩形上，整条线宽都朝内占，从 item 边界往外看，剖面是这样：
+描边整条线宽都朝内画，所以描边内侧与 item 的空隙 = `padding − 描边宽度`：
 
-```text
-item 边界                      描边内沿        描边外沿
-  │                              │← strokeWidth →│
-  │←────── 缝隙 = padding − strokeWidth ──────→│
-  │←──────────────── padding ────────────────→│
-```
-
-描边内侧与 item 之间的空隙 = `padding − 描边宽度`。比如 `stroke(3).padding(4)` 的缝隙是 `4 − 3 = 1`，`stroke(3).padding(10)` 留 `7`。
-
-| stroke | padding | 缝隙 | 观感 |
+| stroke | padding | 空隙 | 观感 |
 | --- | --- | --- | --- |
-| 3 | 3 | 0 | 描边内沿正好压在 item 边上 |
-| 3 | 4 | 1 | 几乎贴边（1 在 2× 屏上只有 2 个物理像素） |
+| 3 | 3 | 0 | 描边内沿压在 item 边上 |
 | 3 | 6 | 3 | 能看出细缝 |
-| 3 | 8 | 5 | 间隔明显，框像浮在 item 外面 |
+| 3 | 8 | 5 | 框像浮在 item 外面 |
 | 3 | 2 | −1 | 描边压进 item 内部 1 |
 
-三个容易踩的坑：
+三个坑：
 
-- `padding ≤ strokeWidth` 时缝隙 ≤ 0，描边会盖住 item 的边缘甚至内部。想要框浮在外面的观感，两个值的差建议 ≥ 3。
-- 两个参数都是 px，必须同单位。`stroke(Color.WHITE, dp(3))` 配 `.padding(4f)` 实际是 4px 外扩加 6px 描边，缝隙是负的。Demo 里统一过一遍 `dp()` 换算。
-- 四角的空隙比侧边大。外扩矩形的圆角是 `目标圆角 + padding`，直角 item 的角是尖的，上面那个公式只对侧边严格成立。
+- `padding ≤ strokeWidth` 时空隙 ≤ 0，描边会盖住 item 边缘。想要浮起来的观感，两者差建议 ≥ 3。
+- 参数都是 px，必须同单位。`stroke(..., dp(3))` 配 `.padding(4f)` 实际是 6px 描边配 4px 外扩，空隙是负的。
+- 四角空隙比侧边大：外扩矩形的圆角是 `目标圆角 + padding`，直角 item 的角是尖的。
 
-想让空隙更大就继续加 `padding`，传负值则收进 item 内侧。
-
-想确认到底隔了多少，给 item 加一圈范围线。注意不能用不透明背景（会盖住 `behind()` 的底色），要用只描边、不填充的，Demo 里的 `bg_item_bounds.xml` 就是 1px 半透明白线。飞框和这圈线之间的距离就是间隔。
-
-圆角不写就自动跟随。不调 `corner()` 时，容器读目标 View 自己的圆角：API 21+ 先问 `Outline`，更早版本读背景 `GradientDrawable`，外面包了 `RippleDrawable` / `LayerDrawable` 就往下找一层。读到之后再叠上外扩量，圆角矩形外移 `p` 后圆角是 `r + p`，所以 `padding(2dp)` 配 10dp 圆角的卡片，框是 12dp。
+圆角不写就自动跟随，读目标 View 背景或 Outline 的圆角：
 
 ```kotlin
-val grid = findViewById<FocusIndicatorLayout>(R.id.fiGrid)
 grid.front()
     .stroke(accent, dp(3))
     .padding(dp(2))        // 不写 corner，圆角跟着卡片走
 ```
 
-列表里每张卡片圆角不同、或者以后改了卡片圆角，框都不用重配。要固定圆角就照旧 `.corner(px)`；想从固定值改回自动，用 `.cornerAuto()`（等价于 `.corner(-1f)`）。
-
-自动模式取不到圆角时按直角画，不报错（背景是纯色，或者自定义 Drawable 没有 outline）。
+卡片圆角不同、或设计改了圆角，框都不用重配。固定圆角用 `.corner(px)`，改回自动用 `.cornerAuto()`；取不到圆角时按直角画，不报错。
 
 ## API
 
@@ -313,7 +291,7 @@ grid.front()
 | --- | --- |
 | `fill(color)` | 圆角实心底色，传 `Color.TRANSPARENT` 关闭 |
 | `stroke(color, widthPx)` | 描边，颜色 alpha 为 0 或宽度为 0 即关闭 |
-| `glow(color, widthPx, layers = 6)` | 外发光，用同心环近似径向衰减。不用 `setShadowLayer`，API 19 老机器上不会掉进软件绘制。`layers` 是环数，越多越平滑，每帧多画一圈 |
+| `glow(color, widthPx, layers = 6)` | 外发光，用同心环近似径向衰减；`layers` 是环数，越多越平滑也越吃 GPU |
 | `padding(px)` | 相对 item 的外扩距离，默认 `0`；描边内侧与 item 的空隙 = `padding - 描边宽度`，负值表示内缩 |
 | `corner(px)` | 圆角半径；不调用时自动跟随目标 View 的圆角，传负值恢复自动 |
 | `cornerAuto()` | 恢复自动模式，圆角跟随目标 View |
@@ -337,7 +315,7 @@ view.setContentAlpha(0.5f)                                // 淡入淡出
 view.clear()                                              // 收起
 ```
 
-`setStyle()` 只在样式变化时调。`update()` 的宽高是真实重绘，圆角传 px；`glowLayers` 有默认值 6，1.0.0 的 8 参调用照常可用。`hasIndicator()` 返回当前有没有画东西。
+`setStyle()` 只在样式变化时调。`update()` 的宽高是真实重绘，圆角传 px。`hasIndicator()` 返回当前有没有画东西。
 
 ## 注意事项
 
@@ -346,27 +324,21 @@ view.clear()                                              // 收起
 3. 容器用 `wrap_content` 就行。库内部处理了“绘制层铺满容器但不撑开容器”的测量问题，不用写死高度。
 4. item 焦点态做放大动画时别关掉 `setTrackTargetLayout`，否则飞框按拿到焦点那一刻的尺寸画，最后比 item 小一圈。
 5. 列表滚动（尤其是 fling）时要持续校正。内置的贴合窗口只在焦点切换后跑 700ms，之后不再重采位置；`RecyclerView` / `ListView` 请在滚动回调里调 `requestSnap()`，或者直接 `snapTo(focusedView)`。
-6. 一个容器包一组 item，别给每个 item 套一个容器。每个容器固定带 2 个绘制层 View 和 3 个 `Paint`，一屏几十个容器就是上百个多余 View。
+6. 一个容器包一组 item，别给每个 item 套一个容器。每个容器固定多出 2 个绘制层 View。
 7. 容器及其祖先不要做 `scale` 缩放。外形换算按“父级链不缩放”算，给容器或更上层加 `scaleX/scaleY` 会让飞框偏位。
-8. 光晕在 API 19 的盒子上别开太大。`glow()` 半径建议 ≤ 8px、颜色 alpha ≤ 0x40；默认画 6 圈描边，范围放大或调大 `layers` 都会明显加重 GPU 混合的负担。
+8. 光晕在 API 19 的盒子上别开太大：半径 ≤ 8px、颜色 alpha ≤ 0x40，调大 `layers` 会更吃 GPU。
 9. 豁免的 item 必须自己画焦点态。`fi:ignore` 只让容器闭嘴，item 没有 selector 或背景变化的话用户看不出焦点在哪。最好带点过渡，见第 4 节。
-10. 自动圆角只读一次并缓存。缓存按“目标 View + 背景引用”判断，item 换了背景会重读；但背景内部的 selector 状态切换（同一个 `StateListDrawable` 在不同 state 下换 shape）不会重读，这类 item 请显式 `corner()`，或者保证各状态圆角一致。
+10. 自动圆角只在背景引用变化时重读。同一个 `StateListDrawable` 在不同 state 下换 shape 不会被感知，这类 item 请显式 `corner()`，或保证各状态圆角一致。
 
 ## Demo
 
-`app` 模块有五个场景，装到电视 / 盒子 / 模拟器上用遥控器操作（效果见上方效果预览）：
-
-1. 同尺寸 tab + 圆角实心底色在 item 下层平移，最后一个 tab 用 `tag="fi:ignore"` 退出统一飞框
-2. 不同尺寸 item + 描边飞框，观察宽高与圆角逐帧重绘的变形（描边外扩 6dp，与 item 留 3dp 空隙）
-3. 底色层 + 描边层组合，两层同步变形（底色贴住 item、描边外扩 8dp）
-4. item 焦点态放大 1.2 倍，验证飞框贴合放大后的边缘
-5. RecyclerView 网格，验证列表复用场景；指示器不设 `corner()`，圆角自动跟随卡片背景
-
-每个 item 都画了一圈 1px 范围线（`bg_item_bounds`），代表 item 自身的边界，用来对照飞框和 item 之间的空隙：示例 2 留 3dp、示例 3 留 5dp。示例 5 是反例，`padding 2dp` 小于 `stroke 3dp`，描边内沿压进卡片 1dp，看着就是贴着边画。
+`app` 模块有五个场景（效果见上方预览），装到电视 / 盒子 / 模拟器上用遥控器操作：
 
 ```bash
 ./gradlew :app:installDebug
 ```
+
+每个 item 都画了一圈 1dp 细线框（`bg_item_bounds`）标出自身边界，用来对照飞框与 item 的空隙：示例 2 留 3dp、示例 3 留 5dp。示例 5 是反例，`padding 2dp` 小于 `stroke 3dp`，描边内沿压进卡片 1dp。
 
 ## 环境
 
