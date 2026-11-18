@@ -93,21 +93,7 @@ dependencies {
 
 Gradle 6.7 及更早没有 `dependencyResolutionManagement`，把 `maven { url 'https://jitpack.io' }` 写进根 `build.gradle` 的 `allprojects { repositories { } }` 即可。
 
-坐标由 JitPack 按 GitHub 用户名 + 仓库名 + tag 生成，仓库名区分大小写（是 `FocusIndicator`，不是 `focusindicator`）。
 版本号要与 GitHub 上的 tag 完全一致，当前 `1.1.0`，不带 `v` 前缀，可用版本见 [CHANGELOG.md](CHANGELOG.md)。
-首次拉取时 JitPack 要现场构建，可能等几分钟。
-
-### 源码模块（本地）
-
-```kotlin
-dependencies {
-    implementation(project(":focusindicator"))
-}
-```
-
-Groovy DSL 写成 `implementation project(':focusindicator')` 即可。
-
-不需要额外配置：库除 Kotlin 标准库外没有任何依赖，`minSdk` 17 也不会抬高使用方的门槛。
 
 ## 快速开始
 
@@ -182,7 +168,7 @@ row2.setGroup(group);
 ### 4. 让某个 item 不显示统一飞框（可选）
 
 有些 item 自己就有焦点样式（描边动效、异形高亮、整卡换图），硬套统一飞框反而别扭。
-带标记的 View 整棵子树都不再参与统一飞框：
+带标记的 View 整棵子树都不再参与统一飞框：  android:tag="fi:ignore"
 
 ```xml
 <!-- 推荐：写在 item 布局里，RecyclerView 复用时自动生效，不用维护调用 -->
