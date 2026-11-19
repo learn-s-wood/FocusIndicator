@@ -5,4 +5,10 @@
     <color name="demo_text_primary">#FFFFFFFF</color>
     <color name="demo_text_secondary">#99FFFFFF</color>
     <color name="demo_grid_card">#FF1F1F1F</color>
+
+    <!-- 指示器主色，tab 选中态与焦点框共用 -->
+    <color name="demo_accent">#FFFF5000</color>
+
+    <!-- 外发光颜色，alpha 压到 0x66 避免在 API 19 上过度混合 -->
+    <color name="demo_accent_glow">#66FF5000</color>
 </resources>

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    豁免卡的文字焦点色：聚焦转主色，失焦还原。
+    焦点在卡片 item 上而非文字本身，adapter 里给文字开了 duplicateParentState 跟随 item 焦点态。
+-->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_focused="true" android:color="@color/demo_accent" />
+    <item android:color="@color/demo_text_primary" />
+</selector>

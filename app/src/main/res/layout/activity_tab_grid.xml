@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Tab + 网格示例页。
+
+    顶部是一排 tab，数量超过屏宽，横向滚动。tab 外面套一层 FocusIndicatorLayout，
+    焦点落在哪个 tab 上就画一块圆角色块；焦点移进内容区后色块淡出，由红字表示
+    当前页。下方每个 tab 一个 Fragment 内容页，切换时 show/hide，GONE 的页不参与
+    焦点搜索。所有容器共享同一个 Group（由 Activity 持有），跨容器移动时飞框接力。
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:clipChildren="false"
+    android:clipToPadding="false"
+    android:keepScreenOn="true"
+    android:orientation="vertical"
+    android:paddingStart="24dp"
+    android:paddingTop="12dp"
+    android:paddingEnd="24dp"
+    android:paddingBottom="12dp">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/tab_demo_title"
+        android:textColor="@color/demo_text_primary"
+        android:textSize="18sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:text="@string/tab_demo_desc"
+        android:textColor="@color/demo_text_secondary"
+        android:textSize="11sp" />
+
+    <!-- 顶部 tab：横向列表，超出屏宽时可滚动；左右方向由 TabStrip 自己限界，
+         焦点所在项由 CenterLayoutManager 滚到中间；往下走交给内容区 -->
+    <io.github.learnswood.focusindicator.FocusIndicatorLayout
+        android:id="@+id/fiTopTabs"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:clipChildren="false"
+        android:clipToPadding="false">
+
+        <io.github.learnswood.focusindicator.demo.focus.TabStrip
+            android:id="@+id/tabList"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:clipToPadding="false"
+            android:overScrollMode="never" />
+    </io.github.learnswood.focusindicator.FocusIndicatorLayout>
+
+    <!-- 内容区：一次只显示一个 Fragment，切换时 show/hide，GONE 的不参与焦点搜索 -->
+    <androidx.fragment.app.FragmentContainerView
+        android:id="@+id/fragmentContainer"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginTop="14dp"
+        android:layout_weight="1" />
+</LinearLayout>

@@ -6,6 +6,12 @@
 implementation("com.github.learn-s-wood:FocusIndicator:<tag>")
 ```
 
+## 未发布
+
+### 新增
+
+- `followToOffset(view, dx, dy)`：飞到 view 平移 (dx, dy) 之后的位置。位置固定，宽高仍跟随目标的实时外形更新，不同尺寸的 item 之间切换时框停在落点上只改尺寸。
+
 ## 1.1.0 — 2026-11-18
 
 ### 新增

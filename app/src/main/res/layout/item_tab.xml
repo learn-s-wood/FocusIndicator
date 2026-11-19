@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    tab 条的单个条目。
+    自身不画任何框：焦点色块由外层 FocusIndicatorLayout 画，选中态靠文字变红。
+    textColor 里只有「选中且没焦点」才用红色，焦点在 tab 上时用白字配色块。
+-->
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="96dp"
+    android:layout_height="36dp"
+    android:layout_marginEnd="8dp"
+    android:focusable="true"
+    android:gravity="center"
+    android:textColor="@color/tab_title"
+    android:textSize="13sp" />

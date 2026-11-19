@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    tab 文字颜色。
+
+    只有「选中但没焦点」才用红字：此时焦点在下方列表里，视线里没有色块可看，
+    靠红字记住当前在哪一页。焦点还在 tab 上时用白字，底色是 FocusIndicatorLayout
+    画的橙色色块。selected 由 TabAdapter 调 setSelected 驱动，不是按焦点算的。
+-->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:state_selected="true"
+        android:state_focused="false"
+        android:color="@color/demo_accent" />
+    <item android:color="@color/demo_text_primary" />
+</selector>

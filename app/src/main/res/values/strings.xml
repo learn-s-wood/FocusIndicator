@@ -31,4 +31,15 @@
     <string name="scale_three">放大三</string>
     <string name="scale_four">四</string>
     <string name="scale_five">放大五</string>
+
+    <string name="demo_entry_tab_grid">Tab + 网格 →</string>
+
+    <string name="tab_demo_title">Tab 切换 + 网格 / 横向列表</string>
+    <string name="tab_demo_desc">tab 数量超出屏宽，左右移动到边会跟着滚动，焦点项始终在中间；焦点在 tab 上时是橙色色块，移进下方列表后色块淡出，改成红字记住当前页。列表也一样，焦点换一个就把选中项滚到中间，第一行再往上回到当前 tab。</string>
+    <string name="tab_demo_all">推荐</string>
+    <string name="tab_demo_movie">电影</string>
+    <string name="tab_demo_series">剧集</string>
+    <string name="tab_demo_doc">纪录片</string>
+    <string name="tab_demo_kids">少儿</string>
+    <string name="tab_demo_music">音乐</string>
 </resources>

@@ -15,6 +15,7 @@ import android.graphics.Outline
 import android.graphics.Rect
 import android.graphics.RectF
 import android.graphics.drawable.Drawable
+import android.graphics.drawable.DrawableContainer
 import android.graphics.drawable.GradientDrawable
 import android.graphics.drawable.LayerDrawable
 import android.graphics.drawable.RippleDrawable
@@ -108,6 +109,17 @@ class FocusIndicatorLayout @JvmOverloads constructor(
     private var currentTarget: View? = null
 
     /**
+     * 目标位置是否已经固定。
+     *
+     * 固定后飞行途中框不再跟着目标 View 走，但尺寸仍按目标的实时外形更新。
+     */
+    private var targetFixed = false
+
+    /** 位置固定时的落点中心（容器局部坐标） */
+    private var fixedCenterX = 0f
+    private var fixedCenterY = 0f
+
+    /**
      * 正在飞向本容器的豁免项。这期间 currentRect 是插值出来的中间点，不是真实外形，
      * 接力点已在起飞前按目标位置写好，[hideIndicator] 不能再拿它覆盖。
      */
@@ -142,10 +154,15 @@ class FocusIndicatorLayout @JvmOverloads constructor(
     private val followRunnable = Runnable {
         val target = pendingTarget
         pendingTarget = null
-        if (!autoFollow || target == null || !isShown || !isSelfOrDescendant(target) ||
+        if (target == null || !isShown || !isSelfOrDescendant(target) ||
             target.width == 0 || target.height == 0
         ) {
             hideIndicator()
+            return@Runnable
+        }
+        // 手动接管：焦点在容器内变化时什么都不做，由外部决定何时 [followTo]。
+        // 这里不能 hide，否则“焦点变化不再触发任何绘制”就变成了“把框藏起来”
+        if (!autoFollow) {
             return@Runnable
         }
         followTo(target)
@@ -172,6 +189,7 @@ class FocusIndicatorLayout @JvmOverloads constructor(
                 return
             }
             measureRect(target, settleRect)
+            pinToFixedCenter(settleRect)
             if (isNear(settleRect, currentRect)) {
                 if (++settleStableFrames >= SETTLE_STABLE_FRAMES) {
                     return
@@ -330,6 +348,8 @@ class FocusIndicatorLayout @JvmOverloads constructor(
         }
         cancelAnimator()
         currentTarget = target
+        targetFixed = false
+        flyingToIgnored = false
         measureRect(target, fromRect)
         currentRect.set(fromRect)
         visible = true
@@ -338,7 +358,7 @@ class FocusIndicatorLayout @JvmOverloads constructor(
         startSettle()
     }
 
-    /** 重新对齐当前焦点项（尺寸/位置变化后调用），不做动画 */
+    /** 按当前焦点重新跟随一次（带动画），仅 autoFollow 开启时有效。尺寸/位置变化后要瞬时贴合请用 [snapTo] */
     fun requestSnap() {
         val focused = findFocus() ?: return
         if (isSelfOrDescendant(focused)) {
@@ -367,6 +387,8 @@ class FocusIndicatorLayout @JvmOverloads constructor(
             return
         }
         currentTarget = target
+        targetFixed = false
+        flyingToIgnored = false
 
         cancelAnimator()
 
@@ -396,6 +418,57 @@ class FocusIndicatorLayout @JvmOverloads constructor(
         startAnimation()
     }
 
+    /**
+     * 飞到 [target] 平移 [dx]、[dy] 之后的位置，偏移按容器局部坐标的像素算
+     *
+     * 位置固定、尺寸跟随：飞行途中中心留在落点上，宽高按目标的实时外形更新
+     */
+    fun followToOffset(target: View?, dx: Float, dy: Float) {
+        if (target == null || !isSelfOrDescendant(target)) {
+            hideIndicator()
+            return
+        }
+        if (isFocusIgnored(target)) {
+            flyToAndHide(target)
+            return
+        }
+        measureRect(target, toRect)
+        if (toRect.isEmpty) {
+            hideIndicator()
+            return
+        }
+        toRect.offset(dx, dy)
+        fixedCenterX = toRect.centerX()
+        fixedCenterY = toRect.centerY()
+        currentTarget = target
+        targetFixed = true
+        flyingToIgnored = false
+
+        cancelAnimator()
+
+        if (!visible) {
+            if (!resolveStartRect()) {
+                currentRect.set(toRect)
+                visible = true
+                drawLayers()
+                fadeIn()
+                // 无动画落地也要贴合：item 的放大动画可能刚开始跑
+                startSettle()
+                return
+            }
+            currentRect.set(fromRect)
+            visible = true
+            drawLayers()
+            fadeIn()
+            startAnimation()
+            return
+        }
+
+        fromRect.set(currentRect)
+        fadeIn()
+        startAnimation()
+    }
+
     /** 同容器内焦点落到豁免项：滑过去、路上淡完。跨容器走 [hideAndRelayTo]，见 docs/design.md */
     private fun flyToAndHide(target: View) {
         measureRect(target, toRect)
@@ -413,9 +486,16 @@ class FocusIndicatorLayout @JvmOverloads constructor(
         // 万一这段被打断（焦点又跳到本容器外），不能让它冒充接力起点
         recordRelay(toRect)
         flyingToIgnored = true
-        currentTarget = target
+        targetFixed = false
         cancelAnimator()
         fromRect.set(currentRect)
+        // 退场沿用移出项的尺寸与圆角：currentTarget 不切到豁免项，落点只取它的中心。
+        // 豁免项的焦点样式是任意的（直角/换图），框不该跟着变
+        val centerX = toRect.centerX()
+        val centerY = toRect.centerY()
+        val halfW = fromRect.width() * 0.5f
+        val halfH = fromRect.height() * 0.5f
+        toRect.set(centerX - halfW, centerY - halfH, centerX + halfW, centerY + halfH)
         // 位移换用更均匀的曲线：常规 Decelerate 会把可见的那几十毫秒全塞在起步瞬间
         startAnimation(onEnd = { hideIndicator() }, animationInterpolator = HIDE_FLY_INTERPOLATOR)
         // 边滑边淡出：淡尽点绑在路程比例上，不受两个时长参数大小关系的影响。
@@ -540,6 +620,7 @@ class FocusIndicatorLayout @JvmOverloads constructor(
         }
         flyingToIgnored = false
         currentTarget = null
+        targetFixed = false
         // 不立即擦掉：保留最后一帧外形淡出，动画结束后在 [fadeOut] 的收尾里清空
         fadeOut()
     }
@@ -610,18 +691,35 @@ class FocusIndicatorLayout @JvmOverloads constructor(
         frontView.setContentAlpha(contentAlpha)
     }
 
+    /** 位置固定时把矩形中心钉在落点上，宽高保留；调用前需已量好目标外形 */
+    private fun pinToFixedCenter(rect: RectF) {
+        if (!targetFixed) {
+            return
+        }
+        val halfW = rect.width() * 0.5f
+        val halfH = rect.height() * 0.5f
+        rect.set(
+            fixedCenterX - halfW,
+            fixedCenterY - halfH,
+            fixedCenterX + halfW,
+            fixedCenterY + halfH
+        )
+    }
+
     /**
      * 按进度插值当前外形并重绘。
      * 位移用完整进度，尺寸用滞后进度，避免大尺寸差异时中间形状扭曲。
      */
     private fun applyProgress(progress: Float) {
         // 逐帧重采目标外形：业务方在焦点态做放大动画时，item 的真实外形在飞框动画期间还在变，
-        // 用启动瞬间的静态快照会让框最终小于放大后的 item，看起来就是框不住
+        // 用启动瞬间的静态快照会让框最终小于放大后的 item，看起来就是框不住。
+        // 退场飞行例外：落点形状起飞时已定好，重采会把它覆盖掉
         val target = currentTarget
-        if (trackTargetLayout && target != null && isSelfOrDescendant(target) &&
+        if (!flyingToIgnored && trackTargetLayout && target != null && isSelfOrDescendant(target) &&
             target.width > 0 && target.height > 0
         ) {
             measureRect(target, toRect)
+            pinToFixedCenter(toRect)
         }
 
         val sizeProgress = if (progress <= SIZE_LAG) 0f else (progress - SIZE_LAG) / (1f - SIZE_LAG)
@@ -682,7 +780,7 @@ class FocusIndicatorLayout @JvmOverloads constructor(
      * 读取目标 View 自身的圆角(px)，取不到返回 0。
      *
      * 先问 Outline（API 24+；getRadius 在 21~23 上不存在），
-     * 再退回背景 Drawable（GradientDrawable / Ripple / LayerDrawable 包装）。
+     * 再退回背景 Drawable（GradientDrawable / Ripple / Layer / selector 包装）。
      * 结果按 View + 背景引用缓存：同一个 item 逐帧贴合时不重复反射。
      */
     private fun targetCornerOf(target: View): Float {
@@ -722,6 +820,8 @@ class FocusIndicatorLayout @JvmOverloads constructor(
                 Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP && current is RippleDrawable ->
                     current = current.getDrawable(0)
                 current is LayerDrawable -> current = current.getDrawable(0)
+                // selector 等状态背景取当前选中态那一层，焦点态/默认态的圆角都读得到
+                current is DrawableContainer -> current = current.current
                 else -> return 0f
             }
             depth++
@@ -923,6 +1023,8 @@ class FocusIndicatorLayout @JvmOverloads constructor(
         // 这里不能走 hideIndicator()，否则会往 Group 里写一个已失效的位置
         visible = false
         currentTarget = null
+        targetFixed = false
+        flyingToIgnored = false
         currentRect.setEmpty()
         // 局部坐标随卸载失效，不能留给下次挂载当接力起点
         hasLastRect = false

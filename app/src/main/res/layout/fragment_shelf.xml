@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    内容页（多行横向列表）：电视上最常见的形态，每行自己横向滚动。
+
+    外层容器负责画焦点指示；中间这层 ContentArea 是内容区的焦点边界，往上回到 tab
+    的规则收在它身上；货架里三行用 layout_weight 等分高度，行内 item 撑满行高，
+    所以行数不用改布局就能增删，也不会因为内容变多而溢出。
+-->
+<io.github.learnswood.focusindicator.FocusIndicatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <io.github.learnswood.focusindicator.demo.focus.ContentArea
+        android:id="@+id/contentArea"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <io.github.learnswood.focusindicator.demo.focus.ShelfStack
+            android:id="@+id/shelfStack"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clipChildren="false"
+            android:clipToPadding="false"
+            android:orientation="vertical"
+            android:padding="6dp">
+
+            <io.github.learnswood.focusindicator.demo.focus.ShelfRow
+                android:id="@+id/shelfRow1"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:clipToPadding="false"
+                android:focusable="false"
+                android:paddingStart="6dp"
+                android:paddingEnd="6dp" />
+
+            <io.github.learnswood.focusindicator.demo.focus.ShelfRow
+                android:id="@+id/shelfRow2"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_marginTop="4dp"
+                android:layout_weight="1"
+                android:clipToPadding="false"
+                android:focusable="false"
+                android:paddingStart="6dp"
+                android:paddingEnd="6dp" />
+
+            <io.github.learnswood.focusindicator.demo.focus.ShelfRow
+                android:id="@+id/shelfRow3"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_marginTop="4dp"
+                android:layout_weight="1"
+                android:clipToPadding="false"
+                android:focusable="false"
+                android:paddingStart="6dp"
+                android:paddingEnd="6dp" />
+        </io.github.learnswood.focusindicator.demo.focus.ShelfStack>
+    </io.github.learnswood.focusindicator.demo.focus.ContentArea>
+</io.github.learnswood.focusindicator.FocusIndicatorLayout>

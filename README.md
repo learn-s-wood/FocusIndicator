@@ -251,6 +251,39 @@ grid.front()
 
 卡片圆角不同、或设计改了圆角，框都不用重配。固定圆角用 `.corner(px)`，改回自动用 `.cornerAuto()`；取不到圆角时按直角画，不报错。
 
+### 7. 手动校正与接管（可选）
+
+焦点一变框就自己飞，平时不用管。但内置的贴合窗口只跟着一次飞行跑 700ms，之后就停止重采位置，两种情况需要自己补：
+
+焦点没变、位置变了（列表滚动、item 展开收起、转屏重排）。这时框停在旧位置，需要在变化后调一次 `snapTo()`：
+
+```kotlin
+recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+    override fun onScrolled(rv: RecyclerView, dx: Int, dy: Int) {
+        rv.findFocus()?.let { container.snapTo(it) }
+    }
+})
+```
+
+用 `snapTo()` 而不是 `requestSnap()`：后者会重跑一次跟随动画，放在滚动回调里每帧起一段新动画，看起来是框一直在后面追。
+
+列表要把焦点项滚到中间时，想让框和列表同时到位（可选）。先算出焦点项居中后会平移多少，再让框飞到那个位置：
+
+```kotlin
+container.followToOffset(focused, dx.toFloat(), dy.toFloat())
+```
+
+`dx` / `dy` 是焦点项居中后相对当前位置的平移量，单位 px。位置就此固定：框停在落点上，飞行途中和动画结束后的贴合阶段都只更新宽高，不动中心。偏移量按内容范围钳制，列表到头时焦点项居中不了，偏移量就是 0，框落在焦点项当前位置。
+
+完全手动接管：`setAutoFollow(false)` 后焦点在容器内变化不再自动跟随，由你决定何时、飞不飞；焦点离开容器时仍会正常退场。
+
+| 方法 | 行为 |
+| --- | --- |
+| `followTo(view)` | 飞过去，走完整动画 |
+| `followToOffset(view, dx, dy)` | 飞到 view 平移 (dx, dy) 之后的位置，位置固定，途中只改尺寸 |
+| `snapTo(view)` | 直接落位，无动画 |
+| `requestSnap()` | 找到当前焦点后跟一次（带动画，仅 autoFollow 开启时有效），适合“焦点没动、但想让框重新飞到位” |
+
 ## API
 
 ### FocusIndicatorLayout
@@ -265,11 +298,12 @@ grid.front()
 | `ignoreFocus(view)` | 让某个子 View（及其子树）不显示统一飞框 |
 | `unignoreFocus(view)` | 取消豁免 |
 | `isFocusIgnored(view)` | 查询该 View 是否被豁免（含 `TAG_IGNORE` tag 方式） |
-| `setAutoFollow(boolean)` | 关闭自动跟随，改为自行调用 `followTo()` |
+| `setAutoFollow(boolean)` | 关闭自动跟随，改为自行调用 `followTo()` / `snapTo()` |
 | `setTrackTargetLayout(boolean)` | 是否逐帧重采目标外形，默认 `true`；item 焦点态不改尺寸时可关掉省测量 |
-| `followTo(view)` | 手动飞行到指定 View |
-| `snapTo(view)` | 直接对齐到指定 View（无动画），适合列表滚动后校正 |
-| `requestSnap()` | 按当前焦点项重新对齐（无动画） |
+| `followTo(view)` | 飞到指定 View，走完整动画；起点优先接力组，其次上次位置 |
+| `followToOffset(view, dx, dy)` | 飞到 view 平移 (dx, dy) 之后的位置，位置固定、尺寸跟随，途中只改宽高；列表滚动时让框和列表同时动 |
+| `snapTo(view)` | 直接对齐到指定 View，无动画；列表滚动、尺寸变化后校正用 |
+| `requestSnap()` | 按当前焦点重新跟随一次（带动画，仅 autoFollow 开启时有效），省掉自己 `findFocus()`；要瞬时贴合用 `snapTo(focused)` |
 
 ### Layer（`behind()` / `front()` 返回，可链式调用）
 
@@ -309,7 +343,7 @@ view.clear()                                              // 收起
 2. 容器与所有祖先都要 `clipChildren="false"`。描边和外发光会画到 item 边界之外，跨容器飞行时起始位置甚至落在容器外。
 3. 容器用 `wrap_content` 就行。库内部处理了“绘制层铺满容器但不撑开容器”的测量问题，不用写死高度。
 4. item 焦点态做放大动画时别关掉 `setTrackTargetLayout`，否则飞框按拿到焦点那一刻的尺寸画，最后比 item 小一圈。
-5. 列表滚动（尤其是 fling）时要持续校正。内置的贴合窗口只在焦点切换后跑 700ms，之后不再重采位置；`RecyclerView` / `ListView` 请在滚动回调里调 `requestSnap()`，或者直接 `snapTo(focusedView)`。
+5. 列表滚动（尤其是 fling）时要持续校正。内置的贴合窗口只在焦点切换后跑 700ms，之后不再重采位置；`RecyclerView` / `ListView` 请在滚动回调里调 `snapTo(focusedView)`，细节见第 7 节。
 6. 一个容器包一组 item，别给每个 item 套一个容器。每个容器固定多出 2 个绘制层 View。
 7. 容器及其祖先不要做 `scale` 缩放。外形换算按“父级链不缩放”算，给容器或更上层加 `scaleX/scaleY` 会让飞框偏位。
 8. 光晕在 API 19 的盒子上别开太大：半径 ≤ 8px、颜色 alpha ≤ 0x40，调大 `layers` 会更吃 GPU。

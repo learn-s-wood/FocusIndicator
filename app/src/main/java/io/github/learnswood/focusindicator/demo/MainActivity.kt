@@ -5,6 +5,7 @@
 package io.github.learnswood.focusindicator.demo
 
 import android.app.Activity
+import android.content.Intent
 import android.graphics.Color
 import android.graphics.drawable.TransitionDrawable
 import android.os.Bundle
@@ -35,15 +36,30 @@ class MainActivity : Activity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        setupTabGridDemo()
         setupColorBlockDemo()
         setupStrokeDemo()
         setupComboDemo()
         setupScaleDemo()
         setupGridDemo()
 
+        findViewById<View>(R.id.btnTabGridDemo).setOnClickListener {
+            startActivity(Intent(this, TabGridActivity::class.java))
+        }
+
         // 默认焦点落在第一个 tab 上
         val firstTab = findViewById<View>(R.id.tab1)
         firstTab.post { firstTab.requestFocus() }
+    }
+
+    private fun setupTabGridDemo() {
+        val tabGridDemo = findViewById<FocusIndicatorLayout>(R.id.tabGridHome)
+        tabGridDemo.setGroup(focusGroup)
+        tabGridDemo.behind()
+            .fill(COLOR_ACCENT)
+            .corner(dp(3))
+            .padding(0f)
+        tabGridDemo.front().enable(false)
     }
 
     /**
@@ -178,8 +194,8 @@ class MainActivity : Activity() {
          */
         const val FOCUS_TRANSITION_DURATION = 120
 
-        /** 场景 5：网格列数与 item 数量（两行） */
+        /** 场景 5：网格列数与 item 数量（三行） */
         const val GRID_SPAN_COUNT = 4
-        const val GRID_ITEM_COUNT = 8
+        const val GRID_ITEM_COUNT = 12
     }
 }

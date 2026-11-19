@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    豁免卡背景：故意不设圆角、不设描边框，作为"直角、无框"的极端样例。
+    用来验证退场飞行沿用移出项的样式——豁免项焦点样式是任意的，框不该跟着变。
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="@color/demo_grid_card" />
+</shape>
