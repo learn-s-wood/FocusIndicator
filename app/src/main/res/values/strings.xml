@@ -42,4 +42,13 @@
     <string name="tab_demo_doc">纪录片</string>
     <string name="tab_demo_kids">少儿</string>
     <string name="tab_demo_music">音乐</string>
+    <string name="tab_demo_variety">综艺</string>
+    <string name="tab_demo_sports">体育</string>
+    <string name="tab_demo_news">新闻</string>
+    <string name="tab_demo_finance">财经</string>
+    <string name="tab_demo_edu">教育</string>
+    <string name="tab_demo_opera">戏曲</string>
+    <string name="tab_demo_travel">旅游</string>
+    <string name="tab_demo_food">美食</string>
+    <string name="tab_demo_tech">科技</string>
 </resources>

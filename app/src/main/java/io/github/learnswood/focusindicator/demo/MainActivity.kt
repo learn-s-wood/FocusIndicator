@@ -16,13 +16,8 @@ import androidx.recyclerview.widget.RecyclerView
 import io.github.learnswood.focusindicator.FocusIndicatorLayout
 
 /**
- * 焦点飞框 Demo 页，验证 [FocusIndicatorLayout] 的五种形态：
- *
- * 1. 同尺寸 item + 圆角实心底色滑动（色块在 item 下层）
- * 2. 不同尺寸 item + 描边飞框，验证宽高/圆角逐帧重绘的变形动画
- * 3. 底色层 + 描边层组合，两层同形不同 padding，验证同步变形
- * 4. item 焦点态放大 1.2 倍，验证飞框能否始终贴住放大后的实际外形
- * 5. RecyclerView 网格，验证列表场景下指示器与复用 item 的配合（圆角不设置，自动跟随卡片背景）
+ * 焦点飞框 Demo 页：底色滑动、描边变形、双层组合、焦点放大贴合、RecyclerView 网格五场景。
+ * 各场景验证点见对应 setup 方法注释与 README 预览。
  */
 class MainActivity : Activity() {
 
@@ -121,12 +116,9 @@ class MainActivity : Activity() {
     }
 
     /**
-     * 场景 4：item 在焦点态放大，验证飞框能否贴住放大后的实际外形。
-     *
-     * 关键点：item 的放大动画是在它自己的 OnFocusChangeListener 里启动的，
-     * 飞框拿焦点时读到的 scaleX 还是 1.0。靠 setTrackTargetLayout(true)（默认）
-     * 在动画期间逐帧重采真实外形，并在动画结束后的贴合窗口里追平。
-     * 把 setTrackTargetLayout 改成 false 再跑一遍，就能看到框比 item 小一圈。
+     * 场景 4：item 焦点态放大，验证飞框贴住放大后的外形。
+     * 放大动画在 item 自己的焦点监听里启动，靠 setTrackTargetLayout(true) 逐帧重采追平；
+     * 改成 false 可见框比 item 小一圈。
      */
     private fun setupScaleDemo() {
         val container = findViewById<FocusIndicatorLayout>(R.id.fiScale)
@@ -154,11 +146,8 @@ class MainActivity : Activity() {
     }
 
     /**
-     * 场景 5：RecyclerView 网格。
-     * 网格 item 自带圆角背景，实心底色层会被背景盖住，因此只用顶层描边 + 外发光；
-     * item 不需要任何焦点态 selector，容器会自动跟踪复用后的子 View。
-     * 这里故意不调 corner()：卡片背景是 10dp 圆角的 shape，指示器会自动读出来，
-     * 再叠上 2dp 外扩变成 12dp，正好是圆角矩形平移后的几何圆角。
+     * 场景 5：RecyclerView 网格。item 自带圆角背景，故只开顶层描边 + 外发光。
+     * 故意不调 corner()：自动读卡片 10dp 圆角再叠 2dp 外扩；容器自动跟踪复用 item。
      */
     private fun setupGridDemo() {
         val container = findViewById<FocusIndicatorLayout>(R.id.fiGrid)

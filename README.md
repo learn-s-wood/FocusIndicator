@@ -42,9 +42,10 @@ Android TV / 机顶盒的焦点飞框库。焦点指示器从 item 里剥出来�
 
 ```
 FocusIndicator/
-├── focusindicator/     # 功能库
-├── app/                # Demo，五个典型场景
-└── docs/               # 预览图与 GIF
+├── focusindicator/               # 功能库（零依赖）
+├── focusindicator-follow/        # 可选伴生库：滚动列表跟随编排
+├── app/                          # Demo：五个场景 + Tab 页
+└── docs/                         # 预览图与 GIF
 ```
 
 ## 接入
@@ -94,6 +95,14 @@ dependencies {
 Gradle 6.7 及更早没有 `dependencyResolutionManagement`，把 `maven { url 'https://jitpack.io' }` 写进根 `build.gradle` 的 `allprojects { repositories { } }` 即可。
 
 版本号要与 GitHub 上的 tag 完全一致，当前 `1.1.0`，不带 `v` 前缀，可用版本见 [CHANGELOG.md](CHANGELOG.md)。
+
+需要滚动列表「焦点不动、列表动」编排时，再加可选伴生库（多模块坐标，用法见第 8 节）：
+
+```kotlin
+implementation("com.github.learn-s-wood.FocusIndicator:focusindicator-follow:1.2.0")
+```
+
+混淆零配置：保留规则随 AAR 的 consumer rules 自动生效，使用方无需手动 keep。
 
 ## 快速开始
 
@@ -284,6 +293,33 @@ container.followToOffset(focused, dx.toFloat(), dy.toFloat())
 | `snapTo(view)` | 直接落位，无动画 |
 | `requestSnap()` | 找到当前焦点后跟一次（带动画，仅 autoFollow 开启时有效），适合“焦点没动、但想让框重新飞到位” |
 
+### 8. 滚动列表「焦点不动、列表动」（可选伴生库）
+
+电视上常见的观感：焦点换一个，列表把选中项滚到中间，而飞框看起来停在原地。这套编排放在可选伴生库 `focusindicator-follow`，核心库保持零依赖。控制器只依赖安置策略接口 `ListAligner`，不关心列表用什么 LayoutManager：
+
+```kotlin
+val aligner = GravityAligner.center(horizontal = false)   // 普通 RecyclerView，纵向居中
+val controller = FollowController(container, listOf(recyclerView), AlignerProvider { aligner })
+controller.attach()    // 内部 setAutoFollow(false)，焦点一变框和列表同时动
+// 不用时 controller.detach()
+```
+
+居边的用法：
+
+```kotlin
+// 焦点项对应边停在距视口边 marginPx 处（px）
+GravityAligner.left(48)      // 横向居左
+GravityAligner.right(48)     // 横向居右
+GravityAligner.top(32)       // 纵向居上
+GravityAligner.bottom(32)    // 纵向居下
+```
+
+- `GravityAligner(horizontal, gravity, marginPx)`：普通 RecyclerView / GridLayoutManager 的重力安置。`Gravity.START/CENTER/END` 配合边距实现居左/居中/居右/居上/居下；工厂 `GravityAligner.left/right/top/bottom(marginPx)` 与 `center(horizontal, marginPx)` 可直接用。位移按内容范围钳制，列表到头不强行安置。不需要自定义 LayoutManager。
+- 自带对齐的列表（如 Leanback）自行实现 `ListAligner`：只预测落点、不驱动滚动（`align` 返回 false）。
+- 停稳后控制器核对预测落点，对不上把框放回焦点项；普通列表偏离安置目标且还能滚会补一次（封顶 3 次防绕圈）。
+
+别的对齐策略（自定义列表）实现 `ListAligner` 即可接入。Demo 的 Tab 页是活样例。
+
 ## API
 
 ### FocusIndicatorLayout
@@ -352,7 +388,7 @@ view.clear()                                              // 收起
 
 ## Demo
 
-`app` 模块有五个场景（效果见上方预览），装到电视 / 盒子 / 模拟器上用遥控器操作：
+`app` 模块有五个场景（效果见上方预览），另有 Tab + 网格 / 横向列表页（主页入口按钮），装到电视 / 盒子 / 模拟器上用遥控器操作：
 
 ```bash
 ./gradlew :app:installDebug
@@ -363,12 +399,12 @@ view.clear()                                              // 收起
 ## 环境
 
 - 库：`minSdk 17` / `compileSdk 33` / Kotlin 1.8.10 / AGP 8.1.3，仅依赖 Kotlin 标准库
-- Demo 额外引入了 `androidx.recyclerview:1.2.1`（`minSdk 14`），库本体不依赖 AndroidX
+- 伴生库：同核心库配置，另依赖 `androidx.recyclerview:recyclerview:1.2.1`（api 传递）
+- Demo 额外引入了 `androidx.recyclerview:1.2.1`、`androidx.fragment:fragment-ktx:1.3.6`（`minSdk` 均与 17 匹配），库本体不依赖 AndroidX
 
 ## 版本记录
 
-变更历史见 [CHANGELOG.md](CHANGELOG.md)（含每个版本修了什么、行为有哪些变化）。
-当前版本：`1.1.0`。
+变更历史见 [CHANGELOG.md](CHANGELOG.md)。
 
 ## License
 

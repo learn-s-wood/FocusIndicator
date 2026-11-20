@@ -10,27 +10,19 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
+import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import io.github.learnswood.focusindicator.FocusIndicatorLayout
-import io.github.learnswood.focusindicator.demo.focus.CenterGridLayoutManager
-import io.github.learnswood.focusindicator.demo.focus.CenterLayoutManager
-import io.github.learnswood.focusindicator.demo.focus.ContentArea
-import io.github.learnswood.focusindicator.demo.focus.ContentList
-import io.github.learnswood.focusindicator.demo.focus.ContentRegion
-import io.github.learnswood.focusindicator.demo.focus.ShelfRow
-import io.github.learnswood.focusindicator.demo.focus.ShelfStack
+import io.github.learnswood.focusindicator.demo.focus.FocusSpec
+import io.github.learnswood.focusindicator.follow.AlignerProvider
+import io.github.learnswood.focusindicator.follow.GravityAligner
+import io.github.learnswood.focusindicator.follow.FollowController
 
 /**
- * 一个 tab 的内容页，三种形态共用：
- *
- * - [MODE_GRID]：四列网格
- * - [MODE_ROWS]：两列大卡片
- * - [MODE_SHELF]：三行横向列表，电视上最常见的那种
- * - [MODE_MIXED]：单列混排尺寸
- *
- * 每个实例自带 [FocusIndicatorLayout] 容器，Group 由宿主提供。
- *
- * 这里只做装配：形态内容绑数据，内容区实现挂到 [ContentArea] 上，焦点怎么交接
- * 由焦点层自己决定。
+ * 一个 tab 的内容页，四形态共用：网格 / 两列大卡 / 三行横向货架 / 单列混排。
+ * 自带容器、Group 由宿主提供；列表纯 RecyclerView，焦点策略归宿主 FocusHelper，
+ * 这里只装配：绑数据、挂跟随控制器、报焦点装配。
  */
 class ContentFragment : Fragment() {
 
@@ -44,8 +36,8 @@ class ContentFragment : Fragment() {
     private val mode: Int
         get() = requireArguments().getInt(ARG_MODE)
 
-    /** 内容区的跟随控制器：滚动期间冻结飞框，等滚停再对齐 */
-    private var follow: ContentFollow? = null
+    /** 内容区的跟随控制器：框和列表同时动，焦点观感不动 */
+    private var follow: FollowController? = null
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -79,13 +71,21 @@ class ContentFragment : Fragment() {
         super.onDestroyView()
     }
 
-    /** 本页内容区的焦点边界，供宿主导航时取落点 */
-    fun contentArea(): ContentArea? = view?.findViewById(R.id.contentArea)
+    /** 本页内容区的焦点装配，供宿主交给 FocusHelper */
+    fun focusSpec(): FocusSpec? {
+        val v = view ?: return null
+        return if (mode == MODE_SHELF) {
+            FocusSpec(v.findViewById(R.id.shelfStack), SHELF_ROW_IDS.map { v.findViewById(it) }, true)
+        } else {
+            val list = v.findViewById<RecyclerView>(R.id.contentList)
+            FocusSpec(list, listOf(list), false)
+        }
+    }
 
     /** 网格 / 两列大卡：一个列表 */
     private fun bindList(content: FocusIndicatorLayout, spanCount: Int, count: Int, heightDp: Int) {
-        val list = content.findViewById<ContentList>(R.id.contentList)
-        list.layoutManager = CenterGridLayoutManager(requireContext(), spanCount)
+        val list = content.findViewById<RecyclerView>(R.id.contentList)
+        list.layoutManager = GridLayoutManager(requireContext(), spanCount)
         list.adapter = ContentAdapter(List(count) { i ->
             // 网格页放一张豁免卡：验证 followToOffset 落到豁免项时滑过去淡出、不钉在旧落点
             if (spanCount == GRID_SPAN && i == GRID_IGNORED_INDEX) {
@@ -94,15 +94,18 @@ class ContentFragment : Fragment() {
                 ContentCard("$pageName ${i + 1}", "片长 ${78 + i * 3} 分钟", heightDp)
             }
         })
-        bindArea(content, list)
-        follow = ContentFollow(content, listOf(list)).also { it.attach() }
+        val aligner = GravityAligner.center(horizontal = false)
+        follow = FollowController(content, listOf(list), AlignerProvider { aligner }).also { it.attach() }
     }
 
-    /** 多行横向列表：每行自己横向滚 */
+    /** 多行横向列表：每行自己横向滚，行是纯 RecyclerView */
     private fun bindShelf(content: FocusIndicatorLayout) {
-        val stack = content.findViewById<ShelfStack>(R.id.shelfStack)
-        val rows = SHELF_ROW_IDS.map { content.findViewById<ShelfRow>(it) }
+        val rows = SHELF_ROW_IDS.map { content.findViewById<RecyclerView>(it) }
         rows.forEachIndexed { rowIndex, row ->
+            row.layoutManager = LinearLayoutManager(requireContext(), RecyclerView.HORIZONTAL, false)
+            row.itemAnimator = null
+            row.overScrollMode = RecyclerView.OVER_SCROLL_NEVER
+            row.isFocusable = false
             val label = SHELF_ROW_LABELS[rowIndex]
             row.adapter = ContentAdapter(List(SHELF_ITEM_COUNT) { i ->
                 val size = SHELF_ITEM_SIZES[i % SHELF_ITEM_SIZES.size]
@@ -115,9 +118,9 @@ class ContentFragment : Fragment() {
                 )
             })
         }
-        bindArea(content, stack)
         // 三行共用一个容器：只要还有一行在滚，框就继续等着
-        follow = ContentFollow(content, rows).also { it.attach() }
+        val aligner = GravityAligner.center(horizontal = true)
+        follow = FollowController(content, rows, AlignerProvider { aligner }).also { it.attach() }
     }
 
     /**
@@ -126,27 +129,16 @@ class ContentFragment : Fragment() {
      * 相邻 item 高度不一样，焦点换过去时框停在落点上，只改尺寸不改位置
      */
     private fun bindMixed(content: FocusIndicatorLayout) {
-        val list = content.findViewById<ContentList>(R.id.contentList)
-        list.layoutManager = CenterLayoutManager(requireContext())
+        val list = content.findViewById<RecyclerView>(R.id.contentList)
+        list.layoutManager = LinearLayoutManager(requireContext())
         list.adapter = ContentAdapter(
             List(MIXED_COUNT) { i ->
                 val height = MIXED_HEIGHTS[i % MIXED_HEIGHTS.size]
                 ContentCard("$pageName ${i + 1}", "高 ${height}dp", heightDp = height)
             }
         )
-        bindArea(content, list)
-        follow = ContentFollow(content, listOf(list)).also { it.attach() }
-    }
-
-    /**
-     * 把内容区实现挂到边界容器上，并把"往上回到 tab"的落点接到宿主。
-     *
-     * 规则本身在 [ContentArea] 里，这里只是把两边接起来。
-     */
-    private fun bindArea(content: FocusIndicatorLayout, region: ContentRegion) {
-        val area = content.findViewById<ContentArea>(R.id.contentArea)
-        area.bind(region)
-        area.upEntry = { (requireActivity() as FocusGroupHost).tabRegion().focusEntry() }
+        val aligner = GravityAligner.center(horizontal = false)
+        follow = FollowController(content, listOf(list), AlignerProvider { aligner }).also { it.attach() }
     }
 
     private fun accent(): Int = ContextCompat.getColor(requireContext(), R.color.demo_accent)

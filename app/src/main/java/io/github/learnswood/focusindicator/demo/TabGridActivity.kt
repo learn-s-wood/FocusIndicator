@@ -11,21 +11,18 @@ import android.view.View
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
 import androidx.fragment.app.commit
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import io.github.learnswood.focusindicator.FocusIndicatorLayout
-import io.github.learnswood.focusindicator.demo.focus.ContentArea
-import io.github.learnswood.focusindicator.demo.focus.FocusNavigator
-import io.github.learnswood.focusindicator.demo.focus.FocusRegion
-import io.github.learnswood.focusindicator.demo.focus.TabStrip
+import io.github.learnswood.focusindicator.demo.focus.FocusHelper
+import io.github.learnswood.focusindicator.demo.focus.TabAdapter
+import io.github.learnswood.focusindicator.follow.AlignerProvider
+import io.github.learnswood.focusindicator.follow.FollowController
+import io.github.learnswood.focusindicator.follow.GravityAligner
 
 /**
- * 顶部 tab + 内容页的完整页面。
- *
- * 页面只有两个焦点区：顶部的 tab 区（[TabStrip]）和下面的内容区（每个 tab 一个
- * [ContentFragment]）。两个区靠 [FocusRegion] 交接：tab 往下走时向内容区要落点，
- * 内容区往上走时向 tab 要落点。两条链路的规则都在焦点层里，这里只负责接线。
- *
- * 两种焦点样式分工：焦点在 tab 上时靠色块（[FocusIndicatorLayout] 的 behind 层）；
- * 焦点移进内容区后色块淡出，改由红字（state_selected，见 color/tab_title.xml）记住当前页。
+ * 顶部 tab + 内容页。焦点策略全在 [FocusHelper]，tab 与列表均纯 RecyclerView。
+ * 焦点样式分工：tab 上靠 behind 色块，进内容区后色块淡出、改红字记住当前页。
  */
 @SuppressLint("RestrictedApi")
 class TabGridActivity : FragmentActivity(), FocusGroupHost {
@@ -42,28 +39,30 @@ class TabGridActivity : FragmentActivity(), FocusGroupHost {
         R.string.tab_english,
         R.string.tab_demo_doc,
         R.string.tab_demo_kids,
-        R.string.tab_demo_music
+        R.string.tab_demo_music,
+        R.string.tab_demo_variety,
+        R.string.tab_demo_sports,
+        R.string.tab_demo_news,
+        R.string.tab_demo_finance,
+        R.string.tab_demo_edu,
+        R.string.tab_demo_opera,
+        R.string.tab_demo_travel,
+        R.string.tab_demo_food,
+        R.string.tab_demo_tech
     )
 
     private lateinit var contentPages: List<ContentFragment>
-    private lateinit var tabStrip: TabStrip
+    private lateinit var tabList: RecyclerView
+    private lateinit var helper: FocusHelper
+
+    /** tab 条的居中跟随控制器 */
+    private var tabFollow: FollowController? = null
 
     /** 当前显示的页 */
     private var currentIndex = 0
 
     /** 首次落焦点只做一次，之后焦点由用户自己控 */
     private var hasInitialFocus = false
-
-    /**
-     * 跨区焦点导航：tab 区 ↔ 内容区。
-     *
-     * 区内移动交给系统，跨区移动由这里接管（系统的几何搜索在两个区之间距离打平，
-     * 落点不可控）。落点一律问区域要，页面只负责接线。
-     */
-    private val navigator = FocusNavigator(
-        tabRegion = { if (::tabStrip.isInitialized) tabStrip else null },
-        contentArea = { currentContentArea() }
-    )
 
     /** 已接管的方向键，等它的抬起事件一并吃掉 */
     private var pendingKeyCode = 0
@@ -76,25 +75,25 @@ class TabGridActivity : FragmentActivity(), FocusGroupHost {
         setupContentPages()
     }
 
-    override fun tabRegion(): FocusRegion = tabStrip
+    override fun focusHelper(): FocusHelper = helper
 
     /**
-     * 按键先过跨区导航：需要接管的方向键在这里就定下落点，不再交给系统去猜。
-     *
-     * 接管的按键把抬起事件一并吃掉：不然同一次按键的抬起阶段系统还会再做一遍
-     * 几何搜索，把刚定下的落点又挪走。
+     * 四方向键先过 helper 定落点；接管的按键连抬起一起吃掉，
+     * 否则抬起阶段系统再几何搜索会把落点挪走。
      */
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
         val direction = when (event.keyCode) {
             KeyEvent.KEYCODE_DPAD_UP -> View.FOCUS_UP
             KeyEvent.KEYCODE_DPAD_DOWN -> View.FOCUS_DOWN
+            KeyEvent.KEYCODE_DPAD_LEFT -> View.FOCUS_LEFT
+            KeyEvent.KEYCODE_DPAD_RIGHT -> View.FOCUS_RIGHT
             else -> 0
         }
         if (direction == 0) {
             return super.dispatchKeyEvent(event)
         }
         if (event.action == KeyEvent.ACTION_DOWN) {
-            if (!navigator.handle(direction, currentFocus)) {
+            if (!helper.handle(direction, currentFocus)) {
                 return super.dispatchKeyEvent(event)
             }
             pendingKeyCode = event.keyCode
@@ -109,19 +108,25 @@ class TabGridActivity : FragmentActivity(), FocusGroupHost {
 
     /**
      * 窗口真正拿到焦点时把焦点交给 tab 条。
-     * onCreate 里条目还没排出来，onRequestFocusInDescendants 找不到子项，
-     * 所以等这一帧排完再试；成功后不再抢焦点。
+     * onCreate 里条目还没排出来，等这一帧排完再试；成功后不再抢焦点。
      */
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         super.onWindowFocusChanged(hasFocus)
         if (hasFocus && !hasInitialFocus) {
-            tabStrip.post {
-                if (!hasInitialFocus && tabStrip.requestFocus()) hasInitialFocus = true
+            tabList.post {
+                if (!hasInitialFocus && helper.enter(tabList)) hasInitialFocus = true
             }
         }
     }
 
-    /** tab 容器负责画焦点色块，TabStrip 只管条目与选中记忆 */
+    override fun onDestroy() {
+        tabFollow?.detach()
+        tabFollow = null
+        helper.detach()
+        super.onDestroy()
+    }
+
+    /** tab 容器负责画焦点色块，tabList 是纯列表 */
     private fun setupTopTabs() {
         val container = findViewById<FocusIndicatorLayout>(R.id.fiTopTabs)
         container.setGroup(focusGroup)
@@ -132,8 +137,26 @@ class TabGridActivity : FragmentActivity(), FocusGroupHost {
             .padding(0f)
         container.front().enable(false)
 
-        tabStrip = findViewById(R.id.tabList)
-        tabStrip.bind(tabTitles) { index -> showPage(index) }
+        tabList = findViewById(R.id.tabList)
+        tabList.layoutManager = LinearLayoutManager(this, RecyclerView.HORIZONTAL, false)
+        // 选中态只是换文字颜色，重新绑定不需要动画
+        tabList.itemAnimator = null
+        tabList.adapter = TabAdapter(tabTitles) { index -> selectTab(index) }
+
+        helper = FocusHelper(tabList)
+        helper.attach()
+
+        // tab 也走居中跟随：焦点 tab 停在条中间，条自己滚
+        tabFollow = FollowController(container, listOf(tabList), AlignerProvider { GravityAligner.center(horizontal = true) })
+            .also { it.attach() }
+    }
+
+    /** 选中某个 tab：先更新红字再切页，同位置不重复切 */
+    private fun selectTab(index: Int) {
+        val adapter = tabList.adapter as? TabAdapter ?: return
+        if (index == adapter.selectedIndex) return
+        adapter.select(index)
+        showPage(index)
     }
 
     /**
@@ -151,9 +174,10 @@ class TabGridActivity : FragmentActivity(), FocusGroupHost {
                 if (index > 0) hide(page)
             }
         }
+        supportFragmentManager.executePendingTransactions()
+        bindContent(0)
     }
 
-    /** TabStrip 只在选中项真的变了才回调，这里不用再判重 */
     private fun showPage(index: Int) {
         currentIndex = index
         supportFragmentManager.commit {
@@ -161,12 +185,13 @@ class TabGridActivity : FragmentActivity(), FocusGroupHost {
                 if (i == index) show(page) else hide(page)
             }
         }
+        bindContent(index)
     }
 
-    /** 当前页内容区的焦点边界 */
-    private fun currentContentArea(): ContentArea? {
-        if (!::contentPages.isInitialized) return null
-        return contentPages.getOrNull(currentIndex)?.contentArea()
+    /** 把当前页的内容区装配交给 helper */
+    private fun bindContent(index: Int) {
+        val spec = contentPages.getOrNull(index)?.focusSpec() ?: return
+        helper.bindContent(spec)
     }
 
     private fun accent(): Int = ContextCompat.getColor(this, R.color.demo_accent)

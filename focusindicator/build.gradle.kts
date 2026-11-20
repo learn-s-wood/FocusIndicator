@@ -10,7 +10,7 @@ plugins {
 // 打 tag 时请用与 libVersion 完全一致的版本号（如 1.1.0），否则 JitPack 找不到对应产物。
 val libGroup = "com.github.learn-s-wood"
 val libArtifact = "focusindicator"
-val libVersion = "1.1.0"
+val libVersion = "1.2.0"
 
 group = libGroup
 version = libVersion

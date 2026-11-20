@@ -35,8 +35,8 @@ android {
 
 dependencies {
     implementation(project(":focusindicator"))
-    // 仅用于演示列表/网格场景；1.2.1 的 minSdk 为 14，不与 minSdk 17 冲突
-    implementation("androidx.recyclerview:recyclerview:1.2.1")
+    // 可选伴生库：滚动列表“焦点不动、列表动”跟随编排，api 传递暴露 recyclerview 1.2.1（minSdk 14，不冲突）
+    implementation(project(":focusindicator-follow"))
     // 仅用于演示 tab 内容按 Fragment 拆分；1.3.6 的 minSdk 为 14，不与 minSdk 17 冲突
     implementation("androidx.fragment:fragment-ktx:1.3.6")
 }

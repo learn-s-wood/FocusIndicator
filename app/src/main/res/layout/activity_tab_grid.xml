@@ -35,8 +35,7 @@
         android:textColor="@color/demo_text_secondary"
         android:textSize="11sp" />
 
-    <!-- 顶部 tab：横向列表，超出屏宽时可滚动；左右方向由 TabStrip 自己限界，
-         焦点所在项由 CenterLayoutManager 滚到中间；往下走交给内容区 -->
+    <!-- 顶部 tab：纯横向列表，超出屏宽时可滚动；左右限界与跨区交接由 FocusHelper 管 -->
     <io.github.learnswood.focusindicator.FocusIndicatorLayout
         android:id="@+id/fiTopTabs"
         android:layout_width="match_parent"
@@ -45,7 +44,7 @@
         android:clipChildren="false"
         android:clipToPadding="false">
 
-        <io.github.learnswood.focusindicator.demo.focus.TabStrip
+        <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/tabList"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

@@ -112,6 +112,10 @@ paint 的颜色、描边、`strokeJoin`、环宽都在 `setStyle()` 时定好，
 补居中是另一条路：预测落点和实际对不上时，把框放回焦点项上，滚动期间框跟着焦点项走，
 滚完再核对一次。这条路要封顶，不然会绕圈。
 
+策略经 `ListAligner` 注入、与 LayoutManager 解耦：普通 RecyclerView 用 `GravityAligner`
+驱动滚动；自带对齐的列表（如 Leanback）自行实现接口，只预测落点、`align` 返回 false。
+伴生库不引 leanback，也不替它猜对齐位。
+
 ## 测量
 
 自定义 `onMeasure` 要和原生 `FrameLayout` 一致：跳过 `GONE` 子 View（否则 `MATCH_PARENT` 的

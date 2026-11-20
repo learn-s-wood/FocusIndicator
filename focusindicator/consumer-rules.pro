@@ -1,5 +1,4 @@
-# 库自身不反射、不做序列化，无需额外保留规则。
-# 若使用方开启了全量混淆，只要不混淆 FocusIndicatorLayout / FocusIndicatorView
-# （XML 里按类名引用时才需要），本库即可正常工作。
+# 库不反射自有类、不做序列化；反射只碰 Framework（R8 不混淆 android.*）。
+# XML 按类名 inflate 由 aapt 自动 keep；这里再保一层公开 API，防使用方反射/动态类名。
 -keep class io.github.learnswood.focusindicator.FocusIndicatorLayout { public *; }
 -keep class io.github.learnswood.focusindicator.FocusIndicatorView { public *; }

@@ -33,7 +33,7 @@ data class ContentCard(
  * Tab 示例页各个面板共用的 adapter。
  *
  * item 只需 focusable，焦点指示由外层 [io.github.learnswood.focusindicator.FocusIndicatorLayout]
- * 统一绘制；第一行向上回 tab 的边界逻辑在 [ContentList] / [ShelfStack] 里，adapter 不用管。
+ * 统一绘制；焦点记忆与跨区落点在宿主的 FocusHelper 里，adapter 不用管。
  */
 class ContentAdapter(
     private val items: List<ContentCard>

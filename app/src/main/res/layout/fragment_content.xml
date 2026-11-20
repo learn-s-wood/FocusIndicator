@@ -1,30 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    内容页根布局：外层容器负责画焦点指示。
+    内容页根布局：外层容器负责画焦点指示，里面就是一个纯列表。
 
-    中间这层 ContentArea 是内容区的焦点边界，"内容区往上回到 tab"这条规则收在它
-    身上：内容区是什么形态（网格 / 货架）它不管，只问形态两件事——焦点在不在上边界、
-    回到 tab 区该落哪个 view。
-
-    最外层 FocusIndicatorLayout 监听的是全局焦点变化，焦点落在哪个 item 上框就跟到
-    哪一层，与中间这层无关。
+    焦点策略（记忆 / 落点 / 跨区）不在布局层，收在宿主的 FocusHelper；
+    最外层 FocusIndicatorLayout 监听全局焦点变化，焦点落在哪个 item 上框就跟到哪。
 -->
 <io.github.learnswood.focusindicator.FocusIndicatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <io.github.learnswood.focusindicator.demo.focus.ContentArea
-        android:id="@+id/contentArea"
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/contentList"
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
-
-        <io.github.learnswood.focusindicator.demo.focus.ContentList
-            android:id="@+id/contentList"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:clipToPadding="false"
-            android:focusable="false"
-            android:overScrollMode="never"
-            android:padding="6dp" />
-    </io.github.learnswood.focusindicator.demo.focus.ContentArea>
+        android:layout_height="match_parent"
+        android:clipToPadding="false"
+        android:focusable="false"
+        android:overScrollMode="never"
+        android:padding="6dp" />
 </io.github.learnswood.focusindicator.FocusIndicatorLayout>

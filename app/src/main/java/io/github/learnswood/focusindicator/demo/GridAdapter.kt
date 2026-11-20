@@ -15,11 +15,14 @@ import androidx.recyclerview.widget.RecyclerView
  * item 只需要 focusable，焦点指示由外层 [io.github.learnswood.focusindicator.FocusIndicatorLayout] 统一绘制，
  * adapter 里不需要维护任何"选中/焦点"状态或 selector。
  */
-class GridAdapter(private val items: List<String>) : RecyclerView.Adapter<GridAdapter.Holder>() {
+class GridAdapter(
+    private val items: List<String>,
+    private val itemLayout: Int = R.layout.item_grid_card
+) : RecyclerView.Adapter<GridAdapter.Holder>() {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): Holder {
         val view = LayoutInflater.from(parent.context)
-            .inflate(R.layout.item_grid_card, parent, false)
+            .inflate(itemLayout, parent, false)
         return Holder(view)
     }
 
