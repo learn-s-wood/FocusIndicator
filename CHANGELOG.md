@@ -6,7 +6,7 @@
 implementation("com.github.learn-s-wood:FocusIndicator:<tag>")
 ```
 
-## 未发布
+## 1.2.0 — 2026-11-20
 
 ### 新增
 

@@ -68,7 +68,7 @@ dependencyResolutionManagement {
 ```kotlin
 // 模块的 build.gradle.kts
 dependencies {
-    implementation("com.github.learn-s-wood:FocusIndicator:1.1.0")
+    implementation("com.github.learn-s-wood:FocusIndicator:1.2.0")
 }
 ```
 
@@ -88,13 +88,13 @@ dependencyResolutionManagement {
 ```groovy
 // 模块的 build.gradle
 dependencies {
-    implementation 'com.github.learn-s-wood:FocusIndicator:1.1.0'
+    implementation 'com.github.learn-s-wood:FocusIndicator:1.2.0'
 }
 ```
 
 Gradle 6.7 及更早没有 `dependencyResolutionManagement`，把 `maven { url 'https://jitpack.io' }` 写进根 `build.gradle` 的 `allprojects { repositories { } }` 即可。
 
-版本号要与 GitHub 上的 tag 完全一致，当前 `1.1.0`，不带 `v` 前缀，可用版本见 [CHANGELOG.md](CHANGELOG.md)。
+版本号要与 GitHub 上的 tag 完全一致，当前 `1.2.0`，不带 `v` 前缀，可用版本见 [CHANGELOG.md](CHANGELOG.md)。
 
 需要滚动列表「焦点不动、列表动」编排时，再加可选伴生库（多模块坐标，用法见第 8 节）：
 
@@ -404,7 +404,7 @@ view.clear()                                              // 收起
 
 ## 版本记录
 
-变更历史见 [CHANGELOG.md](CHANGELOG.md)。
+最新版本：`1.2.0`。变更历史见 [CHANGELOG.md](CHANGELOG.md)。
 
 ## License
 
